@@ -17,6 +17,6 @@ Related: `SECURITY.md`, `SECURITY_CHECKLIST.md`, `docs/threat-model.md`,
 | SD-07 | Hosted notebooks untrusted; no prod secrets | OPEN | OD-06 pending; conservative default | L1/L17 |
 | SD-08 | Deny-by-default for admin and unknown inputs | RESOLVED | Safe default | all |
 | SD-09 | No data approved until license verified | RESOLVED | Legal/rights safety; off data-rights matrix | L0/L2 |
-| SD-10 | Backend stack/DB/hosting choices | OPEN | Deliberately deferred to owning layers | L1/L16 |
+| SD-10 | Backend stack/DB/hosting choices | PARTIAL | L1 resolved backend=Python/FastAPI, config=pydantic-settings, DB=SQLite dev/test + PostgreSQL (TLS) hosted, frontend=React/Vite/TS, migrations=Alembic. Hosting (L16) and auth (L12) remain OPEN | L1/L16 |
 
 Status values: `RESOLVED` · `PLANNED` · `OPEN` · `SUPERSEDED`.

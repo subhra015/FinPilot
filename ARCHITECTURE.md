@@ -112,15 +112,17 @@ Full detail: `docs/threat-model.md`.
 
 | Concern | Choice | Status |
 |---|---|---|
-| Language/runtime (backend) | to be chosen | `OPEN` |
-| Database engine | to be chosen (relational expected) | `OPEN` |
-| Frontend framework | to be chosen | `OPEN` |
-| Migration tool | to be chosen | `OPEN` |
-| Hosting/deployment target | to be chosen | `OPEN` |
-| Auth/session mechanism | to be chosen | `OPEN` |
+| Language/runtime (backend) | Python 3.11+ (CI 3.13), FastAPI + Uvicorn | `RESOLVED` (L1) |
+| Configuration | pydantic-settings, `FINPILOT_*`, fail-closed production | `RESOLVED` (L1) |
+| Database engine | SQLite dev/test; PostgreSQL (TLS required) for hosted | `RESOLVED` (L1; deployment L16) |
+| Frontend framework | React + Vite + TypeScript | `RESOLVED` (L1) |
+| Migration tool | Alembic | `RESOLVED` (L1) |
+| Hosting/deployment target | to be chosen | `OPEN` (L16) |
+| Auth/session mechanism | to be chosen | `OPEN` (L12) |
 
-These are deliberately `OPEN` until the owning layer selects them with stated
-rationale. No stack is assumed in Layer 0.
+Layer 1 selects the foundation stack above (see `docs/layers/layer-01/README.md`).
+Hosting and authentication remain deliberately `OPEN` until their owning layers.
+Local HTTP development is not production-ready; production requires HTTPS (L16).
 
 ## 8. Repository layout (intended)
 

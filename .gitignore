@@ -1,0 +1,83 @@
+# ---- Secrets / environment -------------------------------------------------
+.env
+.env.*
+!.env.example
+.secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+secrets.json
+service-account*.json
+.gitleaks-report.json
+
+# ---- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+.nox/
+
+# ---- Node / frontend -------------------------------------------------------
+node_modules/
+frontend/dist/
+frontend/coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.tsbuildinfo
+.vite/
+
+# ---- Local databases -------------------------------------------------------
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+finpilot_dev.db
+
+# ---- Data / model artefacts ------------------------------------------------
+data/
+models/
+artifacts/
+*.parquet
+*.arrow
+*.feather
+*.h5
+*.pkl
+*.joblib
+*.onnx
+mlruns/
+runs/
+.ipynb_checkpoints/
+
+# ---- Logs ------------------------------------------------------------------
+*.log
+logs/
+*.out
+
+# ---- OS / editor -----------------------------------------------------------
+Thumbs.db
+Desktop.ini
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json

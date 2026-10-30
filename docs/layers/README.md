@@ -6,7 +6,7 @@ Each layer's full report lives in `docs/layers/layer-XX/README.md`.
 | Layer | Title | Status | Date | Commit | Report |
 |---|---|---|---|---|---|
 | 0 | Project contract & research governance | PASS | 2026-10-31 | _see layer-00 (git initialized; no commit made)_ | [layer-00](layer-00/README.md) |
-| 1 | Foundation: tooling, env config, DB + migrations, CI, logging | NOT STARTED | — | — | — |
+| 1 | Foundation: tooling, env config, DB + migrations, CI, logging | PASS | 2026-10-31 | _pending approval (no commit made)_ | [layer-01](layer-01/README.md) |
 | 2 | Market data ingestion & validation | NOT STARTED | — | — | — |
 | 3 | Feature pipeline (leakage-safe) | NOT STARTED | — | — | — |
 | 4 | Trade policy engine (`TP-V1`) | NOT STARTED | — | — | — |

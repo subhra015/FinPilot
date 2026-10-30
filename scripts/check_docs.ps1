@@ -34,7 +34,8 @@ $required = @(
     'docs/exception-register.md',
     'docs/trade-policy-contract-v1.md',
     'docs/layers/README.md',
-    'docs/layers/layer-00/README.md'
+    'docs/layers/layer-00/README.md',
+    'docs/layers/layer-01/README.md'
 )
 
 Write-Output "== Required documents =="
@@ -51,7 +52,18 @@ foreach ($rel in $required) {
 Write-Output ""
 Write-Output "== Relative markdown link check =="
 $mdFiles = Get-ChildItem -LiteralPath $Root -Recurse -Filter '*.md' -File |
-    Where-Object { $_.FullName -notmatch '\\\.git\\' }
+    Where-Object {
+        $_.FullName -notmatch '\\\.git\\' -and
+        $_.FullName -notmatch '\\node_modules\\' -and
+        $_.FullName -notmatch '\\\.venv\\' -and
+        $_.FullName -notmatch '\\venv\\' -and
+        $_.FullName -notmatch '\\dist\\' -and
+        $_.FullName -notmatch '\\coverage\\' -and
+        $_.FullName -notmatch '\\__pycache__\\' -and
+        $_.FullName -notmatch '\\\.mypy_cache\\' -and
+        $_.FullName -notmatch '\\\.ruff_cache\\' -and
+        $_.FullName -notmatch '\\\.pytest_cache\\'
+    }
 $linkCount = 0
 $brokenCount = 0
 foreach ($f in $mdFiles) {
@@ -63,9 +75,12 @@ foreach ($f in $mdFiles) {
         if ($target -match '^(https?:|mailto:|#)') { continue }
         $target = ($target -split '#')[0].Trim()
         if ([string]::IsNullOrWhiteSpace($target)) { continue }
+        if ($target -match '[<>|*?"]') { continue }
         $linkCount++
         $resolved = Join-Path (Split-Path -Parent $f.FullName) $target
-        if (-not (Test-Path -LiteralPath $resolved)) {
+        $exists = $false
+        try { $exists = Test-Path -LiteralPath $resolved } catch { $exists = $false }
+        if (-not $exists) {
             $brokenCount++
             Write-Output ("  BROKEN {0} -> {1}" -f $f.FullName.Replace($Root,''), $target)
             $failures.Add("Broken link in $($f.Name): $target")

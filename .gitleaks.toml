@@ -1,0 +1,27 @@
+# FinPilot AI — gitleaks configuration.
+# Extends the default rule set. Never print detected secret values.
+title = "FinPilot AI secret scan"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "finpilot-vite-secret"
+description = "Secret-like value assigned to a Vite client variable (SEC-02)"
+regex = '''VITE_[A-Z0-9_]*(?:SECRET|TOKEN|PASSWORD|API_KEY|PRIVATE|CREDENTIAL)[A-Z0-9_]*\s*=\s*["']?[A-Za-z0-9_\-]{8,}'''
+keywords = ["VITE_"]
+severity = "high"
+
+[allowlist]
+description = "Template/example files hold placeholders only, not real secrets."
+paths = [
+  '''\.env\.example$''',
+  '''\.env\.template$''',
+  '''(^|/)node_modules/''',
+  '''(^|/)\.venv/''',
+  '''(^|/)venv/''',
+  '''(^|/)dist/''',
+  '''(^|/)coverage/''',
+  '''(^|/)__pycache__/''',
+  '''(^|/)\.git/''',
+]

@@ -10,28 +10,28 @@ performs the full verification pass.
 | ID | Control (summary) | Owner/Layer | Test plan / evidence | Status |
 |---|---|---|---|---|
 | SEC-01 | Authentication on all private APIs/pages | API/Auth — L12 | Negative tests: unauthenticated requests to portfolio/ledger/account/model endpoints return 401/403 | NOT STARTED |
-| SEC-02 | No secrets in frontend/source/logs/committed config; server injection | Foundation L1; Frontend L13 | Secret scan of source + build output; assert no `VITE_*`/`NEXT_PUBLIC_*` secrets; env injection only | NOT STARTED |
-| SEC-03 | DB private binding, least-privilege roles, TLS, safe migrations | Foundation L1; Deploy L16 | Migration reversibility test; role-permission assertions; hosted TLS check | NOT STARTED |
+| SEC-02 | No secrets in frontend/source/logs/committed config; server injection | Foundation L1; Frontend L13 | L1: `.env.example` placeholders only; `env.ts` allow-list rejects secret-like `VITE_*` (unit test); CI greps built bundle; gitleaks clean. L13: end-to-end frontend build audit | IN PROGRESS — L1 foundation done; frontend L13 pending |
+| SEC-03 | DB private binding, least-privilege roles, TLS, safe migrations | Foundation L1; Deploy L16 | L1: Alembic baseline upgrade→downgrade test passes; production rejects SQLite; no public DB binding; no auto-`create_all`. L16: hosted TLS/roles/backups | IN PROGRESS — L1 migrations/DB defaults done; hosted controls L16 |
 | SEC-04 | HTTPS + HTTP→HTTPS redirect + HSTS when correct | Deploy L16 | Request over HTTP asserts redirect; HSTS header present only with valid TLS | NOT STARTED |
 | SEC-05 | Argon2id password hashing | API/Auth L12 | Unit test: stored hash is Argon2id; plaintext never persisted | NOT STARTED |
 | SEC-06 | Server-side request validation (types/ranges/enums/ownership) | All data layers; API L12 | Negative tests for each endpoint/validator; malformed/oversized/foreign-owner inputs rejected | NOT STARTED |
 | SEC-07 | XSS-safe output + CSP | Frontend L13; API L12 | CSP header test; no unsafe HTML injection test | NOT STARTED |
-| SEC-08 | Security-event logging without secrets/PII | Foundation L1; Obs L15 | Log-redaction tests: tokens/passwords/session ids never appear | NOT STARTED |
+| SEC-08 | Security-event logging without secrets/PII | Foundation L1; Obs L15 | L1: `test_logging_redaction.py` — text + JSON extra fields redact password/token/api_key/bearer (27-test suite green). L15: security-event coverage | IMPLEMENTED (L1 foundation); L15 pending |
 | SEC-09 | Admin endpoints require server-side role checks; deny by default | API L12; Hardening L14 | Negative test: non-admin/admin-bypass attempts rejected | NOT STARTED |
 | SEC-10 | Parameterised SQL / ORM only | All DB layers (L1,2,7,12) | Injection negative tests against queries | NOT STARTED |
-| SEC-11 | Env-var validation at startup; fail-closed in prod | Foundation L1 | Test: missing required var in prod config aborts startup | NOT STARTED |
+| SEC-11 | Env-var validation at startup; fail-closed in prod | Foundation L1 | L1: `test_config.py` production fail-closed matrix (secret length, debug, docs, CORS, HTTPS, non-SQLite, TLS) all raise `ConfigError` | IMPLEMENTED (L1) |
 | SEC-12 | Rate limits on auth/import/expensive APIs; shared store | Hardening L14; API L12 | Test: repeated login/import attempts throttled; shared-store config assertion | NOT STARTED |
-| SEC-13 | CORS explicit origins; no wildcard+credentials | Hardening L14; API L12 | Test: disallowed origin rejected; wildcard-with-credentials absent | NOT STARTED |
-| SEC-14 | Security headers (CSP/HSTS/XCTO/Referrer/frame-ancestors/Permissions-Policy) | Hardening L14; Deploy L16 | Header assertion tests per environment | NOT STARTED |
+| SEC-13 | CORS explicit origins; no wildcard+credentials | Hardening L14; API L12 | L1: `test_app_security.py` — allowed origin returned, disallowed not echoed, production rejects wildcard/http. L14: full abuse hardening | IMPLEMENTED (L1 foundation); L14 pending |
+| SEC-14 | Security headers (CSP/HSTS/XCTO/Referrer/frame-ancestors/Permissions-Policy) | Hardening L14; Deploy L16 | L1: header assertion tests; CSP `frame-ancestors 'none'`; HSTS present only in production. L16: real TLS | IMPLEMENTED (L1 foundation); L14/L16 pending |
 | SEC-15 | Session cookies Secure/HttpOnly/SameSite; rotation; expiry | API/Auth L12 | Cookie attribute test; rotation on privilege change; expiry test | NOT STARTED |
 | SEC-16 | CSRF protection for cookie-authenticated state changes | API/Auth L12; Hardening L14 | Missing/invalid token rejected; origin-check test | NOT STARTED |
 | SEC-17 | Password reset: hashed single-use, expiry, generic, rate limited — else N/A | API/Auth L12 | If implemented: token tests. Else `NOT APPLICABLE (V1)` documented | NOT APPLICABLE (V1) — reset disabled; no fake flow |
 | SEC-18 | Safe file import (future): allow-list, limits, content checks, no traversal, outside web root | Data import (future layer) | Upload negative tests; not enabled in V1 | NOT APPLICABLE (V1) — import not enabled |
 | SEC-19 | Price/trade integrity server-side; **payment** N/A with future gate | Data L2; Policy L4; Execution L5; Risk L6 | Simulated price/cost/size recomputed server-side; client values ignored. Payment clauses N/A | Payment `NOT APPLICABLE (V1)`; integrity NOT STARTED |
-| SEC-20 | Prod debug off; docs/verbose errors/dev CORS disabled | Deploy L16; Foundation L1 | Prod config assertions | NOT STARTED |
-| SEC-21 | Dependency vulnerability checks with regression tests | Foundation L1; Review L17 | Dependency scan recorded; upgrades carry regression tests | NOT STARTED |
-| SEC-22 | Remove only confirmed-unused deps + regression | Foundation L1; Review L17 | Unused-dependency report; regression green after removal | NOT STARTED |
-| SEC-23 | No exposed `.env`/backups/dumps/logs/creds-notebooks/source maps | Deploy L16; Review L17 | Artefact/route inspection for exposed files | NOT STARTED |
+| SEC-20 | Prod debug off; docs/verbose errors/dev CORS disabled | Deploy L16; Foundation L1 | L1: production rejects `debug=true` and docs-enabled; test env docs default off; `/docs` and `/openapi.json` return 404 when disabled | IMPLEMENTED (L1 foundation); L16 pending |
+| SEC-21 | Dependency vulnerability checks with regression tests | Foundation L1; Review L17 | L1: pip-audit (backend/ML lockfiles) = no known vulns; npm audit initially flagged 3 dev-toolchain vulns, upgraded vitest→5.0.5, re-ran tests/build green, audit now 0 | IMPLEMENTED (L1); L17 re-check |
+| SEC-22 | Remove only confirmed-unused deps + regression | Foundation L1; Review L17 | L1: dependency set is minimal and each package is used; no package removed. Re-checked in L17 | REVIEWED (L1); no removal needed |
+| SEC-23 | No exposed `.env`/backups/dumps/logs/creds-notebooks/source maps | Deploy L16; Review L17 | L1: `.gitignore` excludes `.env`, DBs, logs, model/data artefacts, build outputs; `git status` shows no venv/node_modules/dist tracked. Full artefact/route inspection L16/L17 | PARTIAL (L1); L16/L17 pending |
 | SEC-24 | Scan full reachable Git history for secrets (do not print values) | Review L17 | Git-history secret scan recorded (counts only) | NOT STARTED |
 | SEC-25 | Compromised-key handling: rotate steps, no false revocation claims | Review L17 | Documented runbook; verification of replacement | NOT STARTED |
 | SEC-26 | Maintain threat model, attack-surface inventory, decisions, exception register | Layer 0 (initial), refresh L17 | Artefacts exist and are linked; refreshed in L17 | IN PROGRESS — initial artefacts created in L0 |

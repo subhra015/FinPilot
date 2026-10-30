@@ -1,6 +1,7 @@
 # FinPilot AI — Threat Model
 
-Status: **Layer 0 initial version** (full review in Layer 17, per SEC-26).
+Status: **Layer 0 initial; Layer 1 foundation controls recorded** (full review in
+Layer 17, per SEC-26).
 Related: `SECURITY.md`, `SECURITY_CHECKLIST.md`, `ARCHITECTURE.md`,
 `docs/data-rights-matrix.md`.
 
@@ -108,6 +109,10 @@ owner/layer/test plan.
 - Foreign markets excluded until Indian pipeline validated.
 - Hosted-notebook policy (`OD-06`) is `OPEN`; until resolved, notebooks must not
   receive production secrets or licensed data beyond permitted use.
+- **Layer 1 controls now present:** fail-closed production config validation,
+  log redaction, explicit-origin CORS, security headers, HSTS (production only),
+  reversible migration baseline, dependency audits and secret scanning of the
+  current tree and full Git history. See `docs/layers/layer-01/README.md`.
 
 ## 9. Refresh
 

@@ -1,0 +1,130 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (lint, types, tests, audit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Ruff lint
+        run: ruff check src tests
+      - name: Ruff format check
+        run: ruff format --check src tests
+      - name: Type check
+        run: mypy src
+      - name: Tests
+        run: pytest --cov=finpilot --cov-report=term-missing
+      - name: Dependency audit
+        run: pip-audit -r requirements.lock --strict --progress-spinner off
+
+  ml:
+    name: ML (lint, types, tests, audit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Ruff lint
+        run: ruff check src tests
+      - name: Ruff format check
+        run: ruff format --check src tests
+      - name: Type check
+        run: mypy src
+      - name: Tests
+        run: pytest
+      - name: Dependency audit
+        run: pip-audit -r requirements.lock --strict --progress-spinner off
+
+  frontend:
+    name: Frontend (lint, types, tests, build, audit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Format check
+        run: npm run format:check
+      - name: Type check
+        run: npm run typecheck
+      - name: Tests
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Verify no secret-like values in bundle
+        run: |
+          if grep -RInE "(SECRET|API_KEY|PASSWORD|TOKEN)[[:space:]]*[:=][[:space:]]*['\"]?[A-Za-z0-9_-]{16,}" dist; then
+            echo "Potential secret found in frontend bundle"; exit 1
+          fi
+          echo "No secret-like values found in frontend bundle"
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+
+  secret-scan:
+    name: Secret scan (current tree + full history)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks
+        env:
+          GITLEAKS_VERSION: "8.30.0"
+        run: |
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+      - name: Scan current working tree
+        run: gitleaks detect --source . --no-git --config .gitleaks.toml --redact --verbose
+      - name: Scan full git history
+        run: gitleaks detect --source . --config .gitleaks.toml --redact --verbose --log-opts="--all"
+
+  docs:
+    name: Documentation consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run docs check
+        shell: pwsh
+        run: ./scripts/check_docs.ps1
