@@ -7,13 +7,15 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+import finpilot.db.models  # noqa: F401 (registers all ORM models with Base.metadata)
+from finpilot.db.base import Base
+
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# No ORM metadata is registered in Layer 1 (no business tables yet).
-target_metadata = None
+target_metadata = Base.metadata
 
 
 def _get_url() -> str:

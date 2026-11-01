@@ -1,6 +1,7 @@
 """Structured logging with secret redaction (SEC-08).
 
-Log records are redacted both for sensitive key/value pairs and bearer tokens.
+Log records are redacted both for sensitive key/value pairs, bearer tokens,
+and connection string passwords.
 Production emits JSON; development emits readable text. Neither format may ever
 include passwords, API keys, tokens, session ids or reset tokens.
 """
@@ -50,6 +51,7 @@ _KV_PATTERN = re.compile(
 )
 
 _BEARER_PATTERN = re.compile(r"(?i)\bbearer\s+[A-Za-z0-9\-._~+/]+=*")
+_URL_CREDENTIAL_PATTERN = re.compile(r"(://[^:\s/@]+):([^@\s/]+)@")
 
 _RESERVED_RECORD_KEYS = frozenset(vars(logging.LogRecord("", 0, "", 0, "", (), None)).keys()) | {
     "message",
@@ -65,6 +67,7 @@ def redact_text(text: str) -> str:
         return text
     text = _BEARER_PATTERN.sub(f"Bearer {REDACTED}", text)
     text = _KV_PATTERN.sub(lambda m: f"{m.group(1)}{m.group(2)}{REDACTED}", text)
+    text = _URL_CREDENTIAL_PATTERN.sub(rf"\1:{REDACTED}@", text)
     return text
 
 

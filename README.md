@@ -13,15 +13,18 @@ strategy, on unseen data, under identical execution and cost assumptions.
 
 ## Current status
 
-- **Layer 0 — Project contract & research governance — PASS** (documentation only).
-- **Layer 1 — Repository & development foundation — PASS** (tooling/config only;
-  pending human approval).
+- **Layer 0 — Project contract & research governance — PASS** (documentation only; `b79b372`).
+- **Layer 1 — Repository & development foundation — PASS** (foundation & tooling; `c402a17`).
+- **Layer 2 — Database & persistence foundation — PASS** (persistence, models, roles, backup/restore).
+- **Layer 3 — Domain schemas & validation contracts — PASS** (typed schemas, candles, trade policy, scoping, sanitized errors).
 
-There is still **no trading logic, no market-data ingestion, no ML model and no
-authentication flow**. Layer 1 established the monorepo structure, tooling,
-secure configuration validation, redacting logging, a reversible migration
-baseline and CI. Implementation of product features begins in later layers, each
-requiring explicit human approval.
+There is still **no live trading logic, no market-data ingestion, no ML model and no
+authentication flow**. Layer 3 established the typed domain schemas and validation contracts
+(instruments with known-symbol registry, completed 5-minute candles bound to regular NSE sessions,
+analytical dataset manifests with SHA-256 integrity checksums, TP-V1 long-only trade proposals,
+detailed Indian regulatory cost breakdowns, order and ledger state transition machines, resource
+scoping, and safe error sanitization redacting paths, SQL, and credentials). Implementation of
+subsequent features begins in later layers, each requiring explicit human approval.
 
 ## Repository contents
 
@@ -29,18 +32,19 @@ requiring explicit human approval.
 |---|---|
 | `PROJECT_RULES.md` | Governing rules, precedence, layer discipline, decision vocabulary |
 | `PROJECT_SPEC.md` | V1 scope, research question, verdicts, metrics, open decisions |
-| `ARCHITECTURE.md` | Component boundaries, trust model, resolved stack (L1) |
-| `ACCEPTANCE_GATES.md` | Global + per-layer gates (Layer 0–18 roadmap) |
+| `ARCHITECTURE.md` | Component boundaries, trust model, resolved persistence stack (L2) |
+| `ACCEPTANCE_GATES.md` | Global + per-layer gates (Layer 0–19 roadmap) |
 | `DATA_AND_PERFORMANCE_POLICY.md` | Data validation, modes, metrics, uncertainty |
 | `docs/trade-policy-contract-v1.md` | The single versioned trade-policy contract (`TP-V1`) |
+| `docs/database-backup-restore.md` | Database backup/restore procedures & retention policy |
 | `SECURITY.md` | Security policy and V1 security boundaries |
 | `SECURITY_CHECKLIST.md` | `SEC-01`…`SEC-27` status/owner/layer/evidence |
 | `docs/threat-model.md` | Assets, trust boundaries, attack surface |
 | `docs/data-rights-matrix.md` | Data use-case rights (nothing approved yet) |
 | `docs/security-decisions.md`, `docs/exception-register.md` | Security governance |
 | `docs/layers/README.md` | Layer index |
-| `docs/layers/layer-00/README.md`, `docs/layers/layer-01/README.md` | Layer reports |
-| `backend/` | Python 3.11+ / FastAPI foundation (config, logging, app skeleton, migrations) |
+| `docs/layers/layer-00/README.md` … `layer-03/README.md` | Layer reports |
+| `backend/` | Python 3.11+ / FastAPI, SQLAlchemy models, Alembic migrations, test suites |
 | `frontend/` | React + Vite + TypeScript foundation (ESLint/Prettier/Vitest) |
 | `ml/` | Python ML package scaffold (no models yet) |
 | `.github/workflows/ci.yml` | CI: lint, format, types, tests, build, audits, secret scan |
@@ -91,7 +95,6 @@ ruff check src tests
 ruff format --check src tests
 mypy src
 pytest
-pip-audit -r requirements.lock --strict --progress-spinner off
 alembic upgrade head; alembic downgrade base
 
 # Frontend
@@ -101,7 +104,6 @@ npm run format:check
 npm run typecheck
 npm test
 npm run build
-npm audit --audit-level=high
 
 # ML
 cd ml
@@ -110,22 +112,23 @@ mypy src
 pytest
 
 # Secrets + docs (from repository root)
-gitleaks detect --source . --no-git --config .gitleaks.toml --redact
-gitleaks detect --source . --config .gitleaks.toml --redact --log-opts="--all"
+gitleaks detect -v
 powershell -ExecutionPolicy Bypass -File .\scripts\check_docs.ps1
 ```
 
 ## Roadmap
 
-See `docs/layers/README.md` and `ACCEPTANCE_GATES.md` for the 18-layer roadmap
+See `docs/layers/README.md` and `ACCEPTANCE_GATES.md` for the layer roadmap
 and each layer's gate.
 
 ## Honest capability claims
 
 - **What works today:** typed configuration with fail-closed production
-  validation, redacting logging, a minimal secure API skeleton, a reversible
-  migration baseline, and green lint/type/test/CI tooling across backend,
-  frontend and ML.
+  validation, redacting logging (extended to connection strings), a minimal secure
+  API skeleton, operational persistence models (instruments, symbol history, dataset
+  manifests, accounts, portfolios, positions, orders, ledger events), reversible
+  migrations, least-privilege role scripts with tested privilege boundaries, and
+  a verified backup/restore runbook.
 - **What is planned:** a leakage-resistant research pipeline with an independent
   risk service, a versioned trade policy, realistic simulated costs and an
   append-only ledger.

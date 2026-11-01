@@ -7,19 +7,29 @@ databases must be TLS-configured and privately reachable (enforced in settings).
 
 from __future__ import annotations
 
-from sqlalchemy import Engine, create_engine
+import sqlite3
+
+from sqlalchemy import Engine, create_engine, event
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from ..config import Settings
 
 
 class Base(DeclarativeBase):
-    """Declarative base for future ORM models."""
+    """Declarative base for all FinPilot ORM models."""
+
+
+@event.listens_for(Engine, "connect")
+def _set_sqlite_pragmas(dbapi_connection: object, connection_record: object) -> None:
+    """Ensure SQLite enforces foreign key constraints identically to PostgreSQL (SEC-03)."""
+    if isinstance(dbapi_connection, sqlite3.Connection):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
 
 def create_engine_from_settings(settings: Settings) -> Engine:
     """Create a SQLAlchemy engine for the configured database URL."""
-
     url = settings.database_url or ""
     if not url:
         raise ValueError("database_url is not configured")
@@ -33,7 +43,6 @@ def create_engine_from_settings(settings: Settings) -> Engine:
 
 def create_session_factory(engine: Engine) -> sessionmaker[Session]:
     """Return a session factory bound to ``engine``."""
-
     return sessionmaker(
         bind=engine,
         autoflush=False,

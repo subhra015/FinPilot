@@ -33,9 +33,12 @@ $required = @(
     'docs/security-decisions.md',
     'docs/exception-register.md',
     'docs/trade-policy-contract-v1.md',
+    'docs/database-backup-restore.md',
     'docs/layers/README.md',
     'docs/layers/layer-00/README.md',
-    'docs/layers/layer-01/README.md'
+    'docs/layers/layer-01/README.md',
+    'docs/layers/layer-02/README.md',
+    'docs/layers/layer-03/README.md'
 )
 
 Write-Output "== Required documents =="
@@ -58,32 +61,33 @@ $mdFiles = Get-ChildItem -LiteralPath $Root -Recurse -Filter '*.md' -File |
         $_.FullName -notmatch '\\\.venv\\' -and
         $_.FullName -notmatch '\\venv\\' -and
         $_.FullName -notmatch '\\dist\\' -and
-        $_.FullName -notmatch '\\coverage\\' -and
-        $_.FullName -notmatch '\\__pycache__\\' -and
-        $_.FullName -notmatch '\\\.mypy_cache\\' -and
-        $_.FullName -notmatch '\\\.ruff_cache\\' -and
-        $_.FullName -notmatch '\\\.pytest_cache\\'
+        $_.FullName -notmatch '\\backend\\\.pytest_cache\\' -and
+        $_.FullName -notmatch '\\ml\\\.pytest_cache\\'
     }
+
 $linkCount = 0
 $brokenCount = 0
-foreach ($f in $mdFiles) {
-    $text = Get-Content -LiteralPath $f.FullName -Raw
-    if ($null -eq $text) { continue }
-    $linkMatches = [regex]::Matches($text, '\]\(([^)]+)\)')
-    foreach ($m in $linkMatches) {
-        $target = $m.Groups[1].Value.Trim()
-        if ($target -match '^(https?:|mailto:|#)') { continue }
-        $target = ($target -split '#')[0].Trim()
-        if ([string]::IsNullOrWhiteSpace($target)) { continue }
-        if ($target -match '[<>|*?"]') { continue }
+
+foreach ($file in $mdFiles) {
+    $content = Get-Content -LiteralPath $file.FullName -Raw
+    # Matches markdown links [label](path) where path does not start with http/https/mailto/#
+    $matches = [regex]::Matches($content, '\[([^\]]+)\]\(([^)]+)\)')
+    foreach ($m in $matches) {
+        $target = $m.Groups[2].Value.Trim()
+        if ($target -match '^(https?://|mailto:|#)') {
+            continue
+        }
+        # Strip query / fragment
+        $pathOnly = ($target -split '[#?]')[0]
+        if ([string]::IsNullOrWhiteSpace($pathOnly)) {
+            continue
+        }
         $linkCount++
-        $resolved = Join-Path (Split-Path -Parent $f.FullName) $target
-        $exists = $false
-        try { $exists = Test-Path -LiteralPath $resolved } catch { $exists = $false }
-        if (-not $exists) {
+        $resolved = Join-Path $file.DirectoryName $pathOnly
+        if (-not (Test-Path -LiteralPath $resolved)) {
+            Write-Output ("  BROKEN {0} -> {1} (in {2})" -f $m.Value, $pathOnly, (Split-Path -Leaf $file.FullName))
+            $failures.Add("Broken relative link in $($file.FullName): $target")
             $brokenCount++
-            Write-Output ("  BROKEN {0} -> {1}" -f $f.FullName.Replace($Root,''), $target)
-            $failures.Add("Broken link in $($f.Name): $target")
         }
     }
 }
@@ -91,30 +95,32 @@ Write-Output ("  checked {0} relative link(s); {1} broken" -f $linkCount, $broke
 
 Write-Output ""
 Write-Output "== SEC-01..SEC-27 coverage in SECURITY_CHECKLIST.md =="
-$checklist = Join-Path $Root 'SECURITY_CHECKLIST.md'
-$missingSec = @()
-if (Test-Path -LiteralPath $checklist) {
-    $cl = Get-Content -LiteralPath $checklist -Raw
-    for ($i = 1; $i -le 27; $i++) {
-        $id = "SEC-{0:D2}" -f $i
-        if ($cl -notmatch [regex]::Escape($id)) {
+$secFile = Join-Path $Root 'SECURITY_CHECKLIST.md'
+if (Test-Path -LiteralPath $secFile) {
+    $secContent = Get-Content -LiteralPath $secFile -Raw
+    $missingSec = @()
+    1..27 | ForEach-Object {
+        $id = "SEC-{0:d2}" -f $_
+        if ($secContent -notmatch [regex]::Escape($id)) {
             $missingSec += $id
         }
     }
-    if ($missingSec.Count -eq 0) {
-        Write-Output "  OK   all 27 controls present"
+    if ($missingSec.Count -gt 0) {
+        Write-Output ("  MISSING controls: {0}" -f ($missingSec -join ', '))
+        $failures.Add("SECURITY_CHECKLIST.md missing controls: $($missingSec -join ', ')")
     } else {
-        Write-Output ("  MISS {0}" -f ($missingSec -join ', '))
-        foreach ($id in $missingSec) { $failures.Add("Missing control in checklist: $id") }
+        Write-Output "  OK   all 27 controls present"
     }
-} else {
-    Write-Output "  MISS SECURITY_CHECKLIST.md"
 }
 
 Write-Output ""
-if ($failures.Count -gt 0) {
-    Write-Output ("RESULT: FAIL ({0} issue(s))" -f $failures.Count)
+if ($failures.Count -eq 0) {
+    Write-Output "RESULT: PASS"
+    exit 0
+} else {
+    Write-Output ("RESULT: FAIL ({0} error(s))" -f $failures.Count)
+    foreach ($f in $failures) {
+        Write-Output ("  * {0}" -f $f)
+    }
     exit 1
 }
-Write-Output "RESULT: PASS"
-exit 0

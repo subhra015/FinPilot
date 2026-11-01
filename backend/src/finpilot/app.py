@@ -1,9 +1,9 @@
-"""FastAPI application factory (Layer 1 skeleton only).
+"""FastAPI application factory with security headers and safe error handling (Layer 1, Layer 3).
 
-No business endpoints exist yet. This module establishes secure HTTP defaults:
-explicit CORS origins (never wildcard), security headers with CSP frame-
-ancestors, HSTS only in production (where HTTPS is required), and interactive
-docs disabled outside deliberately-enabled environments (SEC-13, SEC-14, SEC-20).
+Establishes secure HTTP defaults:
+- Explicit CORS origins (never wildcard).
+- Security headers with CSP frame-ancestors, nosniff, and HSTS in production.
+- Safe error responses that sanitize internal paths, SQL details, and secrets (SEC-06, SEC-07).
 """
 
 from __future__ import annotations
@@ -12,11 +12,22 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from fastapi import FastAPI, Request, Response
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .config import Settings, load_settings
 from .logging_config import configure_logging
+from .schemas.errors import (
+    DomainValidationError,
+    ErrorCode,
+    ErrorDetail,
+    ErrorResponse,
+    PermissionDeniedError,
+    ResourceNotFoundError,
+    sanitize_error_message,
+)
 
 _SECURITY_HEADERS: dict[str, str] = {
     "X-Content-Type-Options": "nosniff",
@@ -79,6 +90,52 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     app.add_middleware(SecurityHeadersMiddleware, hsts=settings.is_production)
+
+    # Global Safe Exception Handlers (SEC-06, SEC-07)
+    @app.exception_handler(DomainValidationError)
+    async def domain_validation_handler(
+        request: Request, exc: DomainValidationError
+    ) -> JSONResponse:
+        details = (
+            [ErrorDetail(field=exc.field, message=str(exc), code=exc.code.value)]
+            if exc.field
+            else []
+        )
+        resp = ErrorResponse(error=str(exc), code=exc.code, details=details)
+        return JSONResponse(status_code=422, content=resp.model_dump())
+
+    @app.exception_handler(RequestValidationError)
+    async def request_validation_handler(
+        request: Request, exc: RequestValidationError
+    ) -> JSONResponse:
+        details = [
+            ErrorDetail(
+                field=".".join(str(loc) for loc in err.get("loc", []) if loc != "body"),
+                message=sanitize_error_message(err.get("msg", "Invalid value")),
+                code=ErrorCode.VALIDATION_ERROR.value,
+            )
+            for err in exc.errors()
+        ]
+        resp = ErrorResponse(
+            error="Request validation failed.",
+            code=ErrorCode.VALIDATION_ERROR,
+            details=details,
+        )
+        return JSONResponse(status_code=422, content=resp.model_dump())
+
+    @app.exception_handler(PermissionDeniedError)
+    async def permission_denied_handler(
+        request: Request, exc: PermissionDeniedError
+    ) -> JSONResponse:
+        resp = ErrorResponse(error=str(exc), code=ErrorCode.PERMISSION_DENIED)
+        return JSONResponse(status_code=403, content=resp.model_dump())
+
+    @app.exception_handler(ResourceNotFoundError)
+    async def resource_not_found_handler(
+        request: Request, exc: ResourceNotFoundError
+    ) -> JSONResponse:
+        resp = ErrorResponse(error=str(exc), code=ErrorCode.RESOURCE_NOT_FOUND)
+        return JSONResponse(status_code=404, content=resp.model_dump())
 
     @app.get("/healthz", tags=["ops"])
     def healthz() -> dict[str, str]:

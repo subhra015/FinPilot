@@ -1,11 +1,8 @@
 # FinPilot AI — Architecture
 
-Status: **Layer 0 contract (ratified)**. No components are implemented in Layer
-0. This document defines intended boundaries and the trust model at a
-component level; concretisation happens in later layers under their gates.
-
+Status: **Layer 2 Contract (Ratified)**.
 Related: `PROJECT_SPEC.md`, `ACCEPTANCE_GATES.md`, `SECURITY.md`,
-`docs/threat-model.md`.
+`docs/threat-model.md`, `docs/database-backup-restore.md`.
 
 ---
 
@@ -33,7 +30,8 @@ Related: `PROJECT_SPEC.md`, `ACCEPTANCE_GATES.md`, `SECURITY.md`,
 |---|---|---|
 | Market Data Adapter | Fetch/ingest provider data; normalise; attach provenance | Untrusted input boundary |
 | Data Validator | Validate symbol, exchange, timestamp, session, freshness, OHLCV consistency, adjustment status, provenance | Trusted, gating |
-| Candle Store | Persist validated completed candles + provenance | Trusted |
+| Persistence / DB | Operational state, instruments, accounts, orders, ledger events | Trusted (ACID store) |
+| Analytical Store | Immutable partitioned Parquet/Arrow historical files + manifests | Trusted (analytical store) |
 | Feature Pipeline | Leakage-safe features from completed candles only | Trusted |
 | Trade Policy Engine | Apply versioned contract (`TP-V1`) to produce authorized *candidates* | Trusted |
 | ML Selection Layer | Score/select among candidates; produces predictions | Trusted for selection only |
@@ -48,20 +46,20 @@ Related: `PROJECT_SPEC.md`, `ACCEPTANCE_GATES.md`, `SECURITY.md`,
 ## 3. Decision-to-ledger data flow (paper)
 
 ```
-provider data ─► Data Adapter ─► Data Validator ─► Candle Store
-                                                      │ (completed 5-min candles)
-                                                      ▼
-                                             Feature Pipeline
-                                                      ▼
-                                    Trade Policy Engine (TP-V1) ──► candidates
-                                                      ▼
-                                             ML Selection Layer ──► prediction
-                                                      ▼
-                                    Risk Authorization Service ──► approve / reject
-                                                      ▼
-                                    Execution & Cost Simulator ──► events
-                                                      ▼
-                                        Prediction/Event Ledger (append-only)
+provider data ─► Data Adapter ─► Data Validator ─► Analytical Store (Parquet)
+                                                          │ (completed 5-min candles)
+                                                          ▼
+                                                 Feature Pipeline
+                                                          ▼
+                                        Trade Policy Engine (TP-V1) ──► candidates
+                                                          ▼
+                                                 ML Selection Layer ──► prediction
+                                                          ▼
+                                        Risk Authorization Service ──► approve / reject
+                                                          ▼
+                                        Execution & Cost Simulator ──► events
+                                                          ▼
+                                            Operational Ledger Events (append-only)
 ```
 
 Model output alone never creates an accepted trade: the path passes through the
@@ -70,7 +68,7 @@ simulator with the same cost assumptions as historical evaluation.
 
 ## 4. Modes
 
-- **HISTORICAL_REPLAY**: reads only the Candle Store; deterministic; never
+- **HISTORICAL_REPLAY**: reads only stored historical data; deterministic; never
   injected with live data.
 - **FORWARD_PAPER**: consumes newly arriving provider data; still simulated; no
   real orders.
@@ -79,27 +77,39 @@ simulator with the same cost assumptions as historical evaluation.
 Every persisted record carries its mode. Cross-mode aggregation is prohibited in
 evidence-producing outputs.
 
-## 5. Data model (intended, high level)
+## 5. Data model (operational & analytical tiering)
 
-- `instruments` — symbol, exchange, series, tick/lot constraints.
-- `candles` — instrument, interval (5m), start/end ts, OHLCV, adjustment flag,
-  provenance/source id, validation status.
-- `trade_policy_versions` — immutable contract snapshots (e.g. `TP-V1`).
-- `predictions` — model version, policy version, decision candle ref, score,
-  mode.
-- `risk_decisions` — prediction ref, approve/reject, reason codes.
-- `simulated_events` — entry/exit/expiry/partial-fill with prices and the fee
-  schedule version.
-- `ledger` — append-only union/audit of the above with hashes for integrity.
-- `fee_schedules` — named versioned cost tables.
-- `users`/`sessions`/`roles` — introduced in the API/auth layer.
+FinPilot enforces a two-tier persistence architecture (Layer 2):
 
-Schema is created via **migrations**; no silent drops/resets.
+### 5.1 Analytical Tier (Large Historical Data)
+- Stored in **partitioned Apache Parquet / Arrow files** to optimize analytical
+  throughput and prevent operational database bloat.
+- Tracked in `dataset_manifests` with dataset name, version, file path/URI,
+  SHA-256 checksum, row count, start/end timestamps, and schema version.
+
+### 5.2 Operational Tier (Relational State & Ledger)
+Managed via SQLAlchemy models and Alembic migrations:
+- `instruments` — stable instrument identity (ISIN unique), active symbol,
+  market ("EQUITY"), exchange ("NSE"), currency ("INR"), lot size (>0), tick size (>0).
+- `instrument_symbol_history` — tracks historical ticker renames preserving stable
+  instrument identity (`valid_from`, `valid_to`).
+- `dataset_manifests` — analytical file manifests with integrity checksums.
+- `accounts` — simulation accounts (default ₹30,000 initial scenario capital,
+  currency INR, execution mode).
+- `portfolios` — portfolio grouping positions and orders for an account.
+- `positions` — long-only equity cash positions (`quantity >= 0`, entry price,
+  current price, P&L).
+- `orders` — simulated order lifecycle (`quantity > 0`, filled quantity, risk
+  authorization reference).
+- `ledger_events` — append-only prediction and event ledger with sequential
+  numbering, mode isolation, SHA-256 integrity hashes, and previous-hash chaining.
+
+Schema is created strictly via **migrations**; no silent drops or resets.
 
 ## 6. Trust boundaries (summary)
 
 1. Internet ↔ API (public surface): authentication, validation, rate limits.
-2. API ↔ Database: least-privilege roles, private network, TLS when hosted.
+2. API ↔ Database: least-privilege roles, private network (`db.internal`), TLS when hosted.
 3. API ↔ Data Provider: provider data treated as untrusted; validated.
 4. API ↔ Hosted Notebook: high-risk boundary; see `docs/threat-model.md`.
 5. API ↔ Frontend: frontend untrusted; server recomputes.
@@ -114,24 +124,23 @@ Full detail: `docs/threat-model.md`.
 |---|---|---|
 | Language/runtime (backend) | Python 3.11+ (CI 3.13), FastAPI + Uvicorn | `RESOLVED` (L1) |
 | Configuration | pydantic-settings, `FINPILOT_*`, fail-closed production | `RESOLVED` (L1) |
-| Database engine | SQLite dev/test; PostgreSQL (TLS required) for hosted | `RESOLVED` (L1; deployment L16) |
+| Database engine | SQLite dev/test; PostgreSQL (TLS required) for hosted | `RESOLVED` (L1, L2; deployment L16) |
+| Persistence / ORM | SQLAlchemy 2.0 (typed Mapped models, bound parameters) | `RESOLVED` (L2) |
+| Migration tool | Alembic (reversible migrations) | `RESOLVED` (L1, L2) |
+| Analytical storage format | Partitioned Apache Parquet / Arrow files + manifests | `RESOLVED` (L2) |
+| Database roles | `finpilot_admin` (DDL) vs `finpilot_app` (DML only) | `RESOLVED` (L2) |
 | Frontend framework | React + Vite + TypeScript | `RESOLVED` (L1) |
-| Migration tool | Alembic | `RESOLVED` (L1) |
 | Hosting/deployment target | to be chosen | `OPEN` (L16) |
 | Auth/session mechanism | to be chosen | `OPEN` (L12) |
 
-Layer 1 selects the foundation stack above (see `docs/layers/layer-01/README.md`).
-Hosting and authentication remain deliberately `OPEN` until their owning layers.
-Local HTTP development is not production-ready; production requires HTTPS (L16).
-
-## 8. Repository layout (intended)
+## 8. Repository layout
 
 ```
 /                 root docs + config
-/docs             governance, threat model, data rights, registers
+/docs             governance, threat model, data rights, registers, backup runbook
 /docs/layers      per-layer reports + index
+/backend          FastAPI app, SQLAlchemy models, Alembic migrations, test suites
+/frontend         React + TypeScript + Vite UI
+/ml               ML package scaffold
 /scripts          maintenance/check tooling (non-application)
-/ (app code)      introduced only in later layers, per their gates
 ```
-
-Layer 0 creates only documentation and a documentation consistency-check script.
