@@ -9,7 +9,7 @@ Each layer's full report lives in `docs/layers/layer-XX/README.md`.
 | 1 | Foundation: tooling, env config, DB + migrations, CI, logging | PASS | 2026-10-31 | `c402a17` | [layer-01](layer-01/README.md) |
 | 2 | Database & persistence foundation | PASS | 2026-11-01 | _pending human approval_ | [layer-02](layer-02/README.md) |
 | 3 | Domain schemas & validation contracts | PASS | 2026-11-01 | _pending human approval_ | [layer-03](layer-03/README.md) |
-| 4 | Market data ingestion & validation | NOT STARTED | — | — | — |
+| 4 | Data rights, data audit, import & provider adapters | PASS | 2026-11-01 | _pending human approval_ | [layer-04](layer-04/README.md) |
 | 5 | Trade policy engine (`TP-V1`) | NOT STARTED | — | — | — |
 | 6 | Execution & cost simulator | NOT STARTED | — | — | — |
 | 7 | Risk authorization service | NOT STARTED | — | — | — |

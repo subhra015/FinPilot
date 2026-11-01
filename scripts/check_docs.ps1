@@ -29,6 +29,7 @@ $required = @(
     'README.md',
     'docs/threat-model.md',
     'docs/data-rights-matrix.md',
+    'docs/data-health-guide.md',
     'docs/experiment-register.md',
     'docs/security-decisions.md',
     'docs/exception-register.md',
@@ -38,7 +39,8 @@ $required = @(
     'docs/layers/layer-00/README.md',
     'docs/layers/layer-01/README.md',
     'docs/layers/layer-02/README.md',
-    'docs/layers/layer-03/README.md'
+    'docs/layers/layer-03/README.md',
+    'docs/layers/layer-04/README.md'
 )
 
 Write-Output "== Required documents =="

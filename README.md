@@ -17,14 +17,9 @@ strategy, on unseen data, under identical execution and cost assumptions.
 - **Layer 1 — Repository & development foundation — PASS** (foundation & tooling; `c402a17`).
 - **Layer 2 — Database & persistence foundation — PASS** (persistence, models, roles, backup/restore).
 - **Layer 3 — Domain schemas & validation contracts — PASS** (typed schemas, candles, trade policy, scoping, sanitized errors).
+- **Layer 4 — Data rights, data audit, import & provider adapters — PASS** (rights audit, adapters, 8-point audit, quarantine, safe tabular import).
 
-There is still **no live trading logic, no market-data ingestion, no ML model and no
-authentication flow**. Layer 3 established the typed domain schemas and validation contracts
-(instruments with known-symbol registry, completed 5-minute candles bound to regular NSE sessions,
-analytical dataset manifests with SHA-256 integrity checksums, TP-V1 long-only trade proposals,
-detailed Indian regulatory cost breakdowns, order and ledger state transition machines, resource
-scoping, and safe error sanitization redacting paths, SQL, and credentials). Implementation of
-subsequent features begins in later layers, each requiring explicit human approval.
+There is still **no live trading logic, no ML model and no authentication flow**. Layer 4 established the dataset candidate rights audit (blocking unverified scraped sources, permitting Bhavcopy EOD and synthetic demo fixtures), provider adapters (Synthetic, Bhavcopy, Parquet, CSV), an 8-point per-symbol/day audit pipeline (session alignment, completeness, OHLCV consistency, volume/jump anomalies, corporate-action discontinuities, cross-source spot checks), zero-silent-repair quarantine subsystem, and hardened tabular importer enforcing SEC-18 controls. Implementation of subsequent features begins in later layers, each requiring explicit human approval.
 
 ## Repository contents
 
@@ -40,10 +35,11 @@ subsequent features begins in later layers, each requiring explicit human approv
 | `SECURITY.md` | Security policy and V1 security boundaries |
 | `SECURITY_CHECKLIST.md` | `SEC-01`…`SEC-27` status/owner/layer/evidence |
 | `docs/threat-model.md` | Assets, trust boundaries, attack surface |
-| `docs/data-rights-matrix.md` | Data use-case rights (nothing approved yet) |
+| `docs/data-rights-matrix.md` | Audited data candidate rights across 7 use cases |
+| `docs/data-health-guide.md` | Data health, session geometry, 8 audit checks & quarantine |
 | `docs/security-decisions.md`, `docs/exception-register.md` | Security governance |
 | `docs/layers/README.md` | Layer index |
-| `docs/layers/layer-00/README.md` … `layer-03/README.md` | Layer reports |
+| `docs/layers/layer-00/README.md` … `layer-04/README.md` | Layer reports |
 | `backend/` | Python 3.11+ / FastAPI, SQLAlchemy models, Alembic migrations, test suites |
 | `frontend/` | React + Vite + TypeScript foundation (ESLint/Prettier/Vitest) |
 | `ml/` | Python ML package scaffold (no models yet) |
