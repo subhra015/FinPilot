@@ -18,8 +18,9 @@ strategy, on unseen data, under identical execution and cost assumptions.
 - **Layer 2 — Database & persistence foundation — PASS** (persistence, models, roles, backup/restore).
 - **Layer 3 — Domain schemas & validation contracts — PASS** (typed schemas, candles, trade policy, scoping, sanitized errors).
 - **Layer 4 — Data rights, data audit, import & provider adapters — PASS** (rights audit, adapters, 8-point audit, quarantine, safe tabular import).
+- **Layer 5 — Causal features & point-in-time universe — PASS** (FS-V1 catalog, session-aware 5m aggregator, causal indicators, deterministic learned scaling, point-in-time universe).
 
-There is still **no live trading logic, no ML model and no authentication flow**. Layer 4 established the dataset candidate rights audit (blocking unverified scraped sources, permitting Bhavcopy EOD and synthetic demo fixtures), provider adapters (Synthetic, Bhavcopy, Parquet, CSV), an 8-point per-symbol/day audit pipeline (session alignment, completeness, OHLCV consistency, volume/jump anomalies, corporate-action discontinuities, cross-source spot checks), zero-silent-repair quarantine subsystem, and hardened tabular importer enforcing SEC-18 controls. Implementation of subsequent features begins in later layers, each requiring explicit human approval.
+There is still **no live trading logic, no ML model and no authentication flow**. Layer 5 established the causal feature pipeline (FS-V1 with 12 approved features across momentum, trend, volatility, price location, relative volume, and liquidity), session-aware 5-minute bar aggregation, zero cross-session bleed, warm-up handling, training-only learned scaling, and survivorship-bias-free point-in-time universe management. Implementation of subsequent features begins in later layers, each requiring explicit human approval.
 
 ## Repository contents
 
@@ -37,9 +38,10 @@ There is still **no live trading logic, no ML model and no authentication flow**
 | `docs/threat-model.md` | Assets, trust boundaries, attack surface |
 | `docs/data-rights-matrix.md` | Audited data candidate rights across 7 use cases |
 | `docs/data-health-guide.md` | Data health, session geometry, 8 audit checks & quarantine |
+| `docs/feature-dictionary.md` | FS-V1 feature definitions, formulas, proxies & disclosures |
 | `docs/security-decisions.md`, `docs/exception-register.md` | Security governance |
 | `docs/layers/README.md` | Layer index |
-| `docs/layers/layer-00/README.md` … `layer-04/README.md` | Layer reports |
+| `docs/layers/layer-00/README.md` … `layer-05/README.md` | Layer reports |
 | `backend/` | Python 3.11+ / FastAPI, SQLAlchemy models, Alembic migrations, test suites |
 | `frontend/` | React + Vite + TypeScript foundation (ESLint/Prettier/Vitest) |
 | `ml/` | Python ML package scaffold (no models yet) |
