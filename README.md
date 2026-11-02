@@ -19,8 +19,9 @@ strategy, on unseen data, under identical execution and cost assumptions.
 - **Layer 3 — Domain schemas & validation contracts — PASS** (typed schemas, candles, trade policy, scoping, sanitized errors).
 - **Layer 4 — Data rights, data audit, import & provider adapters — PASS** (rights audit, adapters, 8-point audit, quarantine, safe tabular import).
 - **Layer 5 — Causal features & point-in-time universe — PASS** (FS-V1 catalog, session-aware 5m aggregator, causal indicators, deterministic learned scaling, point-in-time universe).
+- **Layer 6 — Execution & portfolio simulator (`TP-V1`) — PASS** (event-driven matching, fee schedule, causal next-bar fills, gap-through-stops, collision ambiguity, portfolio cash reservation, exact accounting reconciliation).
 
-There is still **no live trading logic, no ML model and no authentication flow**. Layer 5 established the causal feature pipeline (FS-V1 with 12 approved features across momentum, trend, volatility, price location, relative volume, and liquidity), session-aware 5-minute bar aggregation, zero cross-session bleed, warm-up handling, training-only learned scaling, and survivorship-bias-free point-in-time universe management. Implementation of subsequent features begins in later layers, each requiring explicit human approval.
+There is still **no live trading logic, no ML model and no authentication flow**. Layer 6 established the event-driven execution simulator, the single versioned trade policy contract (`TP-V1`), realistic statutory fee calculations (`NSE_EQUITY_INTRADAY_V1`), causal next-bar fills, volume participation limits, gap-through-stop executions, collision ambiguity protocols, pre-fill cash reservation, and ₹0.01-precision accounting reconciliation. Implementation of subsequent features begins in later layers, each requiring explicit human approval.
 
 ## Repository contents
 
@@ -32,6 +33,7 @@ There is still **no live trading logic, no ML model and no authentication flow**
 | `ACCEPTANCE_GATES.md` | Global + per-layer gates (Layer 0–19 roadmap) |
 | `DATA_AND_PERFORMANCE_POLICY.md` | Data validation, modes, metrics, uncertainty |
 | `docs/trade-policy-contract-v1.md` | The single versioned trade-policy contract (`TP-V1`) |
+| `docs/execution-policy.md` | Execution policy, fill rules, participation caps, fee schedule & accounting |
 | `docs/database-backup-restore.md` | Database backup/restore procedures & retention policy |
 | `SECURITY.md` | Security policy and V1 security boundaries |
 | `SECURITY_CHECKLIST.md` | `SEC-01`…`SEC-27` status/owner/layer/evidence |
@@ -41,7 +43,7 @@ There is still **no live trading logic, no ML model and no authentication flow**
 | `docs/feature-dictionary.md` | FS-V1 feature definitions, formulas, proxies & disclosures |
 | `docs/security-decisions.md`, `docs/exception-register.md` | Security governance |
 | `docs/layers/README.md` | Layer index |
-| `docs/layers/layer-00/README.md` … `layer-05/README.md` | Layer reports |
+| `docs/layers/layer-00/README.md` … `layer-06/README.md` | Layer reports |
 | `backend/` | Python 3.11+ / FastAPI, SQLAlchemy models, Alembic migrations, test suites |
 | `frontend/` | React + Vite + TypeScript foundation (ESLint/Prettier/Vitest) |
 | `ml/` | Python ML package scaffold (no models yet) |
@@ -125,11 +127,14 @@ and each layer's gate.
   validation, redacting logging (extended to connection strings), a minimal secure
   API skeleton, operational persistence models (instruments, symbol history, dataset
   manifests, accounts, portfolios, positions, orders, ledger events), reversible
-  migrations, least-privilege role scripts with tested privilege boundaries, and
-  a verified backup/restore runbook.
-- **What is planned:** a leakage-resistant research pipeline with an independent
-  risk service, a versioned trade policy, realistic simulated costs and an
-  append-only ledger.
+  migrations, least-privilege role scripts with tested privilege boundaries, a
+  verified backup/restore runbook, causal feature pipeline & point-in-time universe,
+  the single versioned trade policy contract (`TP-V1`), an event-driven execution simulator
+  with next-bar fill timing, limit penetration rules, volume participation caps,
+  gap-through-stop handling, collision ambiguity flags, statutory fee breakdown, and
+  ₹0.01-precision portfolio accounting reconciliation.
+- **What is planned:** an independent risk authorization service (L7), persistent
+  ledger events (L8), ML selection models (L9), and backtesting/forward simulation harnesses.
 - **What is never claimed:** guaranteed returns, the ₹300–₹1,500 band as a
   promise, live-trading capability, or production-ready HTTPS (that is a later
   deployment layer; local HTTP is development-only).
