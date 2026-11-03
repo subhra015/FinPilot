@@ -23,8 +23,9 @@ strategy, on unseen data, under identical execution and cost assumptions.
 - **Layer 7 — Baseline strategies (`REF-NOTRADE-V1`, `STRAT-SIMPLE-V1`) — PASS** (no-trade reference, predeclared simple trend-VWAP-momentum strategy, uncurated multi-month simulation, exact ledger reconciliation to ₹0.00).
 - **Layer 8 — Labeling and temporal validation design — PASS** (trade-policy labeling under Approach A, globally chronological multi-symbol partitions, boundary overlap purging, horizon-justified embargo, sealed final-test lockbox).
 - **Layer 9 — Baseline ML model training — PASS** (approved candidates LogReg + LightGBM, training-only preprocessing fit, Platt & Isotonic calibration on CALIBRATION split, threshold tuning on THRESHOLD_SELECTION, sealed final-test lockbox, trusted model registry with SHA-256 integrity verification, economic selection layer evaluation).
+- **Layer 10 — Calibration & selective decision logic — PASS** (probability calibration on CALIBRATION split, reliability diagrams, Murphy 1973 Brier score decomposition, ECE, hierarchical 5-state selective decision engine, epistemic sample support & OOD abstention, non-double-deducted net expectancy, frozen decision policy contracts `DECISION-POLICY-V1`, zero access to sealed final test).
 
-There is still **no live trading logic, no derivatives, and no payment processing**. Layer 9 established the baseline machine learning training harness, trusted model registry (`ModelRegistry`), and economic selection layer evaluator. Approved candidates (`MODEL-LOGREG-V1` and `MODEL-LIGHTGBM-V1`) were trained strictly on training data with prefit calibration, tuned on development splits, and evaluated against No-Trade and Simple Strategy baselines with exact ₹0.00 ledger reconciliation. The `LOCKED_FINAL_TEST` partition remains cryptographically sealed. Implementation of subsequent features begins in later layers, each requiring explicit human approval.
+There is still **no live trading logic, no derivatives, and no payment processing**. Layer 10 established the probability calibration engine, reliability scoring metrics, and selective decision engine (`SelectiveDecisionEngine`). Candidate models (`MODEL-LOGREG-V1` and `MODEL-LIGHTGBM-V1`) evaluate proposals through a 5-state hierarchy with explicit abstention for low sample support (< 10) or out-of-distribution feature vectors. A model decision alone never authorizes portfolio entry (`is_portfolio_entry_authorized = False` across 100% of decisions). The `LOCKED_FINAL_TEST` partition remains cryptographically sealed. Implementation of subsequent features begins in later layers, each requiring explicit human approval.
 
 ## Repository contents
 
@@ -39,6 +40,7 @@ There is still **no live trading logic, no derivatives, and no payment processin
 | `docs/execution-policy.md` | Execution policy, fill rules, participation caps, fee schedule & accounting |
 | `docs/validation-protocol.md` | Validation protocol, trade-policy labeling, temporal splits, purging & lockbox |
 | `docs/model-registry.md` | Model registry governance, model cards (`LOGREG`, `LIGHTGBM`), and evaluation evidence |
+| `docs/calibration-methodology.md` | Calibration methodology, Murphy (1973) Brier decomposition, 5-state decision logic & abstention |
 | `docs/database-backup-restore.md` | Database backup/restore procedures & retention policy |
 | `SECURITY.md` | Security policy and V1 security boundaries |
 | `SECURITY_CHECKLIST.md` | `SEC-01`…`SEC-27` status/owner/layer/evidence |
@@ -49,7 +51,7 @@ There is still **no live trading logic, no derivatives, and no payment processin
 | `docs/experiment-register.md` | Experiment register and immutable baseline run artifacts |
 | `docs/security-decisions.md`, `docs/exception-register.md` | Security governance |
 | `docs/layers/README.md` | Layer index |
-| `docs/layers/layer-00/README.md` … `layer-09/README.md` | Layer reports |
+| `docs/layers/layer-00/README.md` … `layer-10/README.md` | Layer reports |
 | `backend/` | Python 3.11+ / FastAPI, SQLAlchemy models, Alembic migrations, test suites |
 | `frontend/` | React + Vite + TypeScript foundation (ESLint/Prettier/Vitest) |
 | `ml/` | Python ML package scaffold (no models yet) |

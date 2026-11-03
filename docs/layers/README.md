@@ -15,8 +15,7 @@ Each layer's full report lives in `docs/layers/layer-XX/README.md`.
 | 7 | Baseline strategies (`REF-NOTRADE-V1`, `STRAT-SIMPLE-V1`) | PASS | 2026-11-03 | _pending human approval_ | [layer-07](layer-07/README.md) |
 | 8 | Labeling and temporal validation design | PASS | 2026-11-03 | _pending human approval_ | [layer-08](layer-08/README.md) |
 | 9 | Baseline ML model training | PASS | 2026-11-03 | _pending human approval_ | [layer-09](layer-09/README.md) |
-| 10 | Risk authorization service | NOT STARTED | — | — | — |
-| 10 | Prediction/event ledger | NOT STARTED | — | — | — |
+| 10 | Calibration & selective decision logic | PASS | 2026-11-03 | _pending human approval_ | [layer-10](layer-10/README.md) |
 | 11 | Historical evaluation harness | NOT STARTED | — | — | — |
 | 12 | Forward paper simulation | NOT STARTED | — | — | — |
 | 13 | Synthetic demo mode | NOT STARTED | — | — | — |

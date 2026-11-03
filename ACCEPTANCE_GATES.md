@@ -45,8 +45,7 @@ Outcome labels: **PASS**, **FAIL** (check ran and failed), **BLOCKED**
 | 7 | Baseline strategies | Predeclared simple strategy (`STRAT-SIMPLE-V1`) & No-trade reference; identical execution parity; uncurated multi-period evaluation | SEC-06,19 |
 | 8 | Labeling and temporal validation design | Trade-policy labeling (Approach A); globally chronological multi-symbol splits; boundary purging; horizon-justified embargo; locked final test | SEC-06,19 |
 | 9 | Baseline ML model training | Train approved candidates (LogReg + LightGBM); training-only fit; calibration on CALIBRATION; threshold tuning on validation; locked final-test isolation; safe model loading; selection layer evaluation against baselines | SEC-06,18,23 |
-| 10 | Risk authorization service | Sole authority; independent tests; rejects bypass attempts; integer sizing/exposure/session enforced | SEC-06,09,19 |
-| 10 | Prediction/event ledger | Append-only; integrity hashes; every decision+event recorded with mode/versions | SEC-08,10 |
+| 10 | Calibration and selective decision logic | Probability calibration on designated splits; reliability diagrams; Murphy Brier decomposition; 5-state selective decision engine; sample-support & OOD abstention; no double cost subtraction; frozen decision policy; no final-test access | SEC-06,19,23 |
 | 11 | Historical evaluation harness | No leakage; predeclared comparators; pre-selected uncertainty method; unseen data; mode-safe | SEC-06,19 |
 | 12 | Forward paper simulation | Same cost/model path as history; no live orders; mode isolation | SEC-19 |
 | 13 | Synthetic demo mode | Clearly labelled `SYNTHETIC DEMO`; cannot be reported as market evidence | SEC-06,19 |
