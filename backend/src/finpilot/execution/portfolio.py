@@ -149,6 +149,21 @@ class PortfolioManager:
             )
             return None
 
+        # Existing open order on same instrument
+        if any(o.instrument_id == proposal.instrument_id for o in self.open_orders.values()):
+            self.rejected_proposals.append(
+                (proposal, OrderRejectionReason.EXCEEDS_EXPOSURE_CAP)
+            )
+            return None
+
+        # Existing open position on same instrument (re-entry only after exit)
+        existing_pos = self.positions.get(proposal.instrument_id)
+        if existing_pos is not None and existing_pos.status == "OPEN":
+            self.rejected_proposals.append(
+                (proposal, OrderRejectionReason.EXCEEDS_EXPOSURE_CAP)
+            )
+            return None
+
         # Sizing and Cash Reservation
         estimated_costs = self.fee_schedule.calculate_costs(
             side=OrderSide.BUY,
@@ -226,7 +241,7 @@ class PortfolioManager:
     def apply_fill(self, fill: FillEvent) -> None:
         """Apply an executed order fill event to cash, positions, and ledger."""
         order = self.open_orders.get(fill.order_id)
-        fill_turnover = fill.fill_price * Decimal(fill.fill_quantity)
+        fill_turnover = round_paisa(fill.fill_price * Decimal(fill.fill_quantity))
         total_fill_cost = fill.cost_breakdown.total_costs
 
         if fill.side == OrderSide.BUY:
@@ -286,7 +301,7 @@ class PortfolioManager:
                     instrument_id=pos.instrument_id,
                     symbol=pos.symbol,
                     quantity=new_qty,
-                    average_entry_price=round_paisa(new_avg_price),
+                    average_entry_price=new_avg_price,
                     current_mark_price=fill.fill_price,
                     realized_pnl=pos.realized_pnl,
                     unrealized_pnl=Decimal("0.00"),
@@ -367,7 +382,8 @@ class PortfolioManager:
                 )
             )
 
-            gross_pnl = (fill.fill_price - pos.average_entry_price) * Decimal(fill.fill_quantity)
+            entry_notional = round_paisa(pos.average_entry_price * Decimal(fill.fill_quantity))
+            gross_pnl = fill_turnover - entry_notional
             total_trade_costs = entry_costs_breakdown.total_costs + total_fill_cost
             net_pnl = gross_pnl - total_trade_costs
 
@@ -526,7 +542,7 @@ class PortfolioManager:
         + Sum(Total Costs Paid) - Sum(Gross Realized P&L) == Initial Capital
         """
         open_pos_cost = sum(
-            pos.average_entry_price * Decimal(pos.quantity)
+            round_paisa(pos.average_entry_price * Decimal(pos.quantity))
             for pos in self.positions.values()
             if pos.status == "OPEN"
         )

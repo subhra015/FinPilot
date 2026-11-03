@@ -12,19 +12,21 @@ Each layer's full report lives in `docs/layers/layer-XX/README.md`.
 | 4 | Data rights, data audit, import & provider adapters | PASS | 2026-11-01 | _pending human approval_ | [layer-04](layer-04/README.md) |
 | 5 | Causal features & point-in-time universe | PASS | 2026-11-02 | _pending human approval_ | [layer-05](layer-05/README.md) |
 | 6 | Execution & portfolio simulator (`TP-V1`) | PASS | 2026-11-03 | _pending human approval_ | [layer-06](layer-06/README.md) |
-| 7 | Risk authorization service | NOT STARTED | — | — | — |
-| 8 | Prediction/event ledger | NOT STARTED | — | — | — |
-| 9 | ML selection layer | NOT STARTED | — | — | — |
-| 10 | Historical evaluation harness | NOT STARTED | — | — | — |
-| 11 | Forward paper simulation | NOT STARTED | — | — | — |
-| 12 | Synthetic demo mode | NOT STARTED | — | — | — |
-| 13 | Backend API & authentication | NOT STARTED | — | — | — |
-| 14 | Frontend research UI | NOT STARTED | — | — | — |
-| 15 | Security hardening & abuse controls | NOT STARTED | — | — | — |
-| 16 | Observability, logging & monitoring | NOT STARTED | — | — | — |
-| 17 | Deployment, HTTPS & production env | NOT STARTED | — | — | — |
-| 18 | Full security review & verification | NOT STARTED | — | — | — |
-| 19 | Final evaluation & verdicts | NOT STARTED | — | — | — |
+| 7 | Baseline strategies (`REF-NOTRADE-V1`, `STRAT-SIMPLE-V1`) | PASS | 2026-11-03 | _pending human approval_ | [layer-07](layer-07/README.md) |
+| 8 | Labeling and temporal validation design | PASS | 2026-11-03 | _pending human approval_ | [layer-08](layer-08/README.md) |
+| 9 | Baseline ML model training | PASS | 2026-11-03 | _pending human approval_ | [layer-09](layer-09/README.md) |
+| 10 | Risk authorization service | NOT STARTED | — | — | — |
+| 10 | Prediction/event ledger | NOT STARTED | — | — | — |
+| 11 | Historical evaluation harness | NOT STARTED | — | — | — |
+| 12 | Forward paper simulation | NOT STARTED | — | — | — |
+| 13 | Synthetic demo mode | NOT STARTED | — | — | — |
+| 14 | Backend API & authentication | NOT STARTED | — | — | — |
+| 15 | Frontend research UI | NOT STARTED | — | — | — |
+| 16 | Security hardening & abuse controls | NOT STARTED | — | — | — |
+| 17 | Observability, logging & monitoring | NOT STARTED | — | — | — |
+| 18 | Deployment, HTTPS & production env | NOT STARTED | — | — | — |
+| 19 | Full security review & verification | NOT STARTED | — | — | — |
+| 20 | Final evaluation & verdicts | NOT STARTED | — | — | — |
 
 Layer numbering is a plan (`ACCEPTANCE_GATES.md`); the human approver may
 re-order. Defining a layer/gate does not implement it.

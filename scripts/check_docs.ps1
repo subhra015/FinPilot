@@ -37,6 +37,8 @@ $required = @(
     'docs/database-backup-restore.md',
     'docs/feature-dictionary.md',
     'docs/execution-policy.md',
+    'docs/validation-protocol.md',
+    'docs/model-registry.md',
     'docs/layers/README.md',
     'docs/layers/layer-00/README.md',
     'docs/layers/layer-01/README.md',
@@ -44,7 +46,10 @@ $required = @(
     'docs/layers/layer-03/README.md',
     'docs/layers/layer-04/README.md',
     'docs/layers/layer-05/README.md',
-    'docs/layers/layer-06/README.md'
+    'docs/layers/layer-06/README.md',
+    'docs/layers/layer-07/README.md',
+    'docs/layers/layer-08/README.md',
+    'docs/layers/layer-09/README.md'
 )
 
 Write-Output "== Required documents =="

@@ -40,21 +40,23 @@ Outcome labels: **PASS**, **FAIL** (check ran and failed), **BLOCKED**
 | 2 | Database & persistence foundation | SQLAlchemy models & reversible migrations; stable instrument identity & symbol history; dataset manifests with checksums; operational account/portfolio/position/order/ledger schema; least-privilege roles; backup/restore procedure; parameterized ORM (no string-concatenated SQL) | SEC-03,08,10,11,23 |
 | 3 | Market data ingestion & validation | Provider adapter + validator enforcing symbol/exchange/ts/session/freshness/OHLCV/adjustment/provenance; untrusted-input negative tests; Candle Store via migration | SEC-06,10,18,*SEC-19 (data)* |
 | 4 | Feature pipeline (leakage-safe) | Features derived from completed candles only; point-in-time correctness; leakage tests | SEC-06 |
-| 5 | Trade policy engine (`TP-V1`) | Contract fields schema-enforced; OPEN numerics resolved with evidence or layer blocked; no model influence | SEC-06,19 |
-| 6 | Execution & cost simulator | Deterministic fills/partial fills/unfilled; fee schedule versioning; reproducibility hash | SEC-19 |
-| 7 | Risk authorization service | Sole authority; independent tests; rejects bypass attempts; integer sizing/exposure/session enforced | SEC-06,09,19 |
-| 8 | Prediction/event ledger | Append-only; integrity hashes; every decision+event recorded with mode/versions | SEC-08,10 |
-| 9 | ML selection layer | Selection-only; reproducible training; versioned artifacts; cannot authorize trades | SEC-06,21,23 |
-| 10 | Historical evaluation harness | No leakage; predeclared comparators; pre-selected uncertainty method; unseen data; mode-safe | SEC-06,19 |
-| 11 | Forward paper simulation | Same cost/model path as history; no live orders; mode isolation | SEC-19 |
-| 12 | Synthetic demo mode | Clearly labelled `SYNTHETIC DEMO`; cannot be reported as market evidence | SEC-06,19 |
-| 13 | Backend API & authentication | Authn on all private endpoints; server-side validation; least-privilege DB; sessions/cookies | SEC-01,05,06,08,10,12,15,16,17 |
-| 14 | Frontend research UI | No secrets in frontend; CSP; context-safe output; frontend non-authoritative | SEC-02,07,13,14 |
-| 15 | Security hardening & abuse controls | Rate limits, CSRF, CORS allow-list, headers, admin checks | SEC-09,12,13,14,16 |
-| 16 | Observability, logging & monitoring | Security-event logging without secrets/PII; alerting | SEC-08 |
-| 17 | Deployment, HTTPS & production env | HTTPS+redirect+HSTS; prod debug off; secret injection; no exposed files | SEC-03,04,11,20,23 |
-| 18 | Full security review & verification | Threat model + attack-surface refreshed; negative tests; PASS/FAIL/BLOCKED/N-A report; exception register; dependency + git-history scans | SEC-21,24,25,26,27 |
-| 19 | Final evaluation & verdicts | Uncertainty method applied on unseen data; software/research/economic verdicts issued; band used as evaluation only | SEC-19,27 |
+| 5 | Causal features & point-in-time universe | Strictly causal FS-V1 features; completed 5m bars; session reset at 09:15 IST; no leakage; PIT universe | SEC-06,19 |
+| 6 | Execution & portfolio simulator | Event-driven matching engine; next-bar fill timing; limit penetration; volume cap; fee schedule; ledger reconciliation | SEC-06,19 |
+| 7 | Baseline strategies | Predeclared simple strategy (`STRAT-SIMPLE-V1`) & No-trade reference; identical execution parity; uncurated multi-period evaluation | SEC-06,19 |
+| 8 | Labeling and temporal validation design | Trade-policy labeling (Approach A); globally chronological multi-symbol splits; boundary purging; horizon-justified embargo; locked final test | SEC-06,19 |
+| 9 | Baseline ML model training | Train approved candidates (LogReg + LightGBM); training-only fit; calibration on CALIBRATION; threshold tuning on validation; locked final-test isolation; safe model loading; selection layer evaluation against baselines | SEC-06,18,23 |
+| 10 | Risk authorization service | Sole authority; independent tests; rejects bypass attempts; integer sizing/exposure/session enforced | SEC-06,09,19 |
+| 10 | Prediction/event ledger | Append-only; integrity hashes; every decision+event recorded with mode/versions | SEC-08,10 |
+| 11 | Historical evaluation harness | No leakage; predeclared comparators; pre-selected uncertainty method; unseen data; mode-safe | SEC-06,19 |
+| 12 | Forward paper simulation | Same cost/model path as history; no live orders; mode isolation | SEC-19 |
+| 13 | Synthetic demo mode | Clearly labelled `SYNTHETIC DEMO`; cannot be reported as market evidence | SEC-06,19 |
+| 14 | Backend API & authentication | Authn on all private endpoints; server-side validation; least-privilege DB; sessions/cookies | SEC-01,05,06,08,10,12,15,16,17 |
+| 15 | Frontend research UI | No secrets in frontend; CSP; context-safe output; frontend non-authoritative | SEC-02,07,13,14 |
+| 16 | Security hardening & abuse controls | Rate limits, CSRF, CORS allow-list, headers, admin checks | SEC-09,12,13,14,16 |
+| 17 | Observability, logging & monitoring | Security-event logging without secrets/PII; alerting | SEC-08 |
+| 18 | Deployment, HTTPS & production env | HTTPS+redirect+HSTS; prod debug off; secret injection; no exposed files | SEC-03,04,11,20,23 |
+| 19 | Full security review & verification | Threat model + attack-surface refreshed; negative tests; PASS/FAIL/BLOCKED/N-A report; exception register; dependency + git-history scans | SEC-21,24,25,26,27 |
+| 20 | Final evaluation & verdicts | Uncertainty method applied on unseen data; software/research/economic verdicts issued; band used as evaluation only | SEC-19,27 |
 
 > Layer numbering is a plan; the human approver may re-order. Gates for later
 > layers are defined here to satisfy Layer 0's requirement that **each later
