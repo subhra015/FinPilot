@@ -220,9 +220,7 @@ class RiskConfig(BaseModel):
     session_entry_cutoff_ist: str = Field(default="15:00:00")
     forced_exit_cutoff_ist: str = Field(default="15:15:00")
     max_candle_staleness_seconds: int = Field(default=300, ge=60, le=3600)
-    approved_instruments: list[str] = Field(
-        default_factory=lambda: ["RELIANCE", "TCS", "INFY"]
-    )
+    approved_instruments: list[str] = Field(default_factory=lambda: ["RELIANCE", "TCS", "INFY"])
     approved_policy_version: str = Field(default="TP-V1", max_length=50)
     approved_model_ids: list[str] = Field(
         default_factory=lambda: ["MODEL-LOGREG-V1", "MODEL-LIGHTGBM-V1", "STRAT-SIMPLE-V1"]

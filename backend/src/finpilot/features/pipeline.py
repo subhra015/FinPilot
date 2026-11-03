@@ -228,7 +228,7 @@ class CausalFeaturePipeline:
                 if bars[i].timestamp < bars[i - 1].timestamp:
                     raise DomainValidationError(
                         f"Unsorted bar stream at index {i}: {bars[i].timestamp.isoformat()} < "
-                        f"{bars[i-1].timestamp.isoformat()}",
+                        f"{bars[i - 1].timestamp.isoformat()}",
                         field="timestamp",
                         code=ErrorCode.INVALID_CANDLE,
                     )

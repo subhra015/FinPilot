@@ -77,11 +77,7 @@ def test_boundary_overlap_purging() -> None:
     # 50% ratio means TRAIN is approx index 0..9, DEV starts at index 10
     for i in range(20):
         t_dec = base_time + timedelta(minutes=5 * i)
-        t_exit = (
-            base_time + timedelta(minutes=5 * 15)
-            if i == 9
-            else t_dec + timedelta(minutes=10)
-        )
+        t_exit = base_time + timedelta(minutes=5 * 15) if i == 9 else t_dec + timedelta(minutes=10)
         labels.append(make_label("RELIANCE", t_dec, t_exit))
 
     manifest, partitioned = split_mgr.create_splits(

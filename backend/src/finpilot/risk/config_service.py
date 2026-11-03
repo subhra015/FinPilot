@@ -170,9 +170,7 @@ class RiskConfigService:
     ) -> RiskConfig:
         """Pause or resume trading manually. Admin only."""
         if not user_scope.is_admin:
-            raise PermissionDeniedError(
-                "Access denied: only administrators may pause trading."
-            )
+            raise PermissionDeniedError("Access denied: only administrators may pause trading.")
 
         prev_hash = self._config.calculate_config_hash()
         new_config = self._config.model_copy(

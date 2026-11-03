@@ -13,9 +13,11 @@ from .enums import (
     InstrumentStatus,
     LedgerEventType,
     MarketType,
+    MFAMethod,
     OrderSide,
     OrderStatus,
     OrderType,
+    UserRole,
 )
 from .models import (
     Account,
@@ -24,8 +26,12 @@ from .models import (
     InstrumentSymbolHistory,
     LedgerEvent,
     Order,
+    PasswordResetToken,
     Portfolio,
     Position,
+    SecurityAuditLog,
+    User,
+    UserSession,
 )
 from .roles import ADMIN_ROLE, APP_ROLE, generate_role_setup_script
 
@@ -42,6 +48,8 @@ __all__ = [
     "OrderSide",
     "OrderStatus",
     "LedgerEventType",
+    "UserRole",
+    "MFAMethod",
     "Instrument",
     "InstrumentSymbolHistory",
     "DatasetManifest",
@@ -50,6 +58,10 @@ __all__ = [
     "Position",
     "Order",
     "LedgerEvent",
+    "User",
+    "UserSession",
+    "PasswordResetToken",
+    "SecurityAuditLog",
     "ADMIN_ROLE",
     "APP_ROLE",
     "generate_role_setup_script",

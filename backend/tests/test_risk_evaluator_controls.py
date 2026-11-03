@@ -72,9 +72,9 @@ def valid_proposal(valid_candle: MarketDataRecord) -> TradeProposal:
         decision_timestamp=valid_candle.timestamp,
         earliest_entry_timestamp=datetime(2026, 1, 15, 4, 35, tzinfo=UTC),
         entry_price=Decimal("2500.00"),
-        stop_loss=Decimal("2475.00"),   # 25 pt risk * 5 shares = ₹125 risk (< ₹600 cap)
+        stop_loss=Decimal("2475.00"),  # 25 pt risk * 5 shares = ₹125 risk (< ₹600 cap)
         target_price=Decimal("2550.00"),
-        quantity=5,                      # 5 * 2500 = ₹12,500 notional (< ₹15k cap)
+        quantity=5,  # 5 * 2500 = ₹12,500 notional (< ₹15k cap)
         side=OrderSide.BUY,
         mode=DataMode.HISTORICAL_REPLAY,
     )

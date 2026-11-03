@@ -43,10 +43,7 @@ def calculate_rsi(closes: list[float], period: int = 14) -> float | None:
         return None
 
     # Calculate bar-to-bar price differences for the last `period` transitions
-    diffs = [
-        closes[i] - closes[i - 1]
-        for i in range(len(closes) - period, len(closes))
-    ]
+    diffs = [closes[i] - closes[i - 1] for i in range(len(closes) - period, len(closes))]
 
     gains = [d if d > 0.0 else 0.0 for d in diffs]
     losses = [-d if d < 0.0 else 0.0 for d in diffs]
@@ -64,9 +61,7 @@ def calculate_rsi(closes: list[float], period: int = 14) -> float | None:
     return float(max(0.0, min(100.0, rsi)))
 
 
-def calculate_true_range(
-    high: float, low: float, prev_close: float | None
-) -> float:
+def calculate_true_range(high: float, low: float, prev_close: float | None) -> float:
     """Calculate True Range for a bar given current high, low, and previous close.
 
     TR = max(H - L, |H - C_{prev}|, |L - C_{prev}|)

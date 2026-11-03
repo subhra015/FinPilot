@@ -122,15 +122,11 @@ class RiskService:
         """Update risk limits (admin only)."""
         return self.config_service.update_config(updates, user_scope)
 
-    def set_kill_switch(
-        self, active: bool, user_scope: UserScope, reason: str = ""
-    ) -> RiskConfig:
+    def set_kill_switch(self, active: bool, user_scope: UserScope, reason: str = "") -> RiskConfig:
         """Toggle emergency kill switch (admin only)."""
         return self.config_service.set_kill_switch(active, user_scope, reason)
 
-    def set_manual_pause(
-        self, paused: bool, user_scope: UserScope, reason: str = ""
-    ) -> RiskConfig:
+    def set_manual_pause(self, paused: bool, user_scope: UserScope, reason: str = "") -> RiskConfig:
         """Toggle manual trading pause (admin only)."""
         return self.config_service.set_manual_pause(paused, user_scope, reason)
 

@@ -76,9 +76,7 @@ class TradePolicyLabel(BaseModel):
     decision_time: datetime = Field(
         ..., description="Timestamp of completed 5m decision candle (UTC)"
     )
-    entry_time: datetime = Field(
-        ..., description="Timestamp of next-candle open entry fill (UTC)"
-    )
+    entry_time: datetime = Field(..., description="Timestamp of next-candle open entry fill (UTC)")
     exit_time: datetime = Field(
         ..., description="Timestamp of candle where trade exit occurred (UTC)"
     )
@@ -118,9 +116,7 @@ class TradePolicyLabel(BaseModel):
         ..., description="Point-in-time causal feature values at decision_time"
     )
     policy_version: str = Field(default="TP-V1", max_length=20)
-    labeling_approach: LabelingApproach = Field(
-        default=LabelingApproach.APPROACH_A_SHARED_SIZING
-    )
+    labeling_approach: LabelingApproach = Field(default=LabelingApproach.APPROACH_A_SHARED_SIZING)
 
     @field_validator("decision_time", "entry_time", "exit_time", mode="before")
     @classmethod
@@ -185,9 +181,7 @@ class SplitManifest(BaseModel):
     created_at: datetime = Field(..., description="Manifest generation timestamp (UTC)")
     policy_version: str = Field(default="TP-V1", max_length=20)
     dataset_hash: str = Field(..., description="SHA-256 digest of input market dataset")
-    labeling_approach: LabelingApproach = Field(
-        default=LabelingApproach.APPROACH_A_SHARED_SIZING
-    )
+    labeling_approach: LabelingApproach = Field(default=LabelingApproach.APPROACH_A_SHARED_SIZING)
     partitions: dict[PartitionType, PartitionManifest] = Field(
         ..., description="Manifests for all 5 partitions"
     )

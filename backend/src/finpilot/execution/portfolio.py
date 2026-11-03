@@ -156,9 +156,7 @@ class PortfolioManager:
         # Independent Risk Authority check (Layer 11)
         if self.enforce_risk_authorization:
             if risk_authorization is None:
-                self.rejected_proposals.append(
-                    (proposal, OrderRejectionReason.UNAUTHORIZED)
-                )
+                self.rejected_proposals.append((proposal, OrderRejectionReason.UNAUTHORIZED))
                 self._record_ledger_event(
                     event_type="PROPOSAL_REJECTED_UNAUTHORIZED",
                     instrument_id=proposal.instrument_id,
@@ -183,9 +181,7 @@ class PortfolioManager:
                 and risk_authorization.verify_signature()
             )
             if not matches_proposal or not has_valid_sig:
-                self.rejected_proposals.append(
-                    (proposal, OrderRejectionReason.UNAUTHORIZED)
-                )
+                self.rejected_proposals.append((proposal, OrderRejectionReason.UNAUTHORIZED))
                 self._record_ledger_event(
                     event_type="PROPOSAL_REJECTED_UNAUTHORIZED",
                     instrument_id=proposal.instrument_id,
@@ -201,24 +197,18 @@ class PortfolioManager:
 
         # Duplicate check
         if proposal.proposal_id in [o.proposal_id for o in self.open_orders.values()]:
-            self.rejected_proposals.append(
-                (proposal, OrderRejectionReason.DUPLICATE_ORDER_ID)
-            )
+            self.rejected_proposals.append((proposal, OrderRejectionReason.DUPLICATE_ORDER_ID))
             return None
 
         # Existing open order on same instrument
         if any(o.instrument_id == proposal.instrument_id for o in self.open_orders.values()):
-            self.rejected_proposals.append(
-                (proposal, OrderRejectionReason.EXCEEDS_EXPOSURE_CAP)
-            )
+            self.rejected_proposals.append((proposal, OrderRejectionReason.EXCEEDS_EXPOSURE_CAP))
             return None
 
         # Existing open position on same instrument (re-entry only after exit)
         existing_pos = self.positions.get(proposal.instrument_id)
         if existing_pos is not None and existing_pos.status == "OPEN":
-            self.rejected_proposals.append(
-                (proposal, OrderRejectionReason.EXCEEDS_EXPOSURE_CAP)
-            )
+            self.rejected_proposals.append((proposal, OrderRejectionReason.EXCEEDS_EXPOSURE_CAP))
             return None
 
         # Sizing and Cash Reservation
@@ -232,9 +222,7 @@ class PortfolioManager:
 
         # Check Available Cash
         if total_required_cash > self.available_cash:
-            self.rejected_proposals.append(
-                (proposal, OrderRejectionReason.INSUFFICIENT_CASH)
-            )
+            self.rejected_proposals.append((proposal, OrderRejectionReason.INSUFFICIENT_CASH))
             self._record_ledger_event(
                 event_type="PROPOSAL_REJECTED_INSUFFICIENT_CASH",
                 instrument_id=proposal.instrument_id,
@@ -256,9 +244,7 @@ class PortfolioManager:
         # Create Execution Order
         order_id = f"ord_{proposal.proposal_id[:12]}_{uuid.uuid4().hex[:6]}"
         auth_id = (
-            getattr(risk_authorization, "authorization_id", None)
-            if risk_authorization
-            else None
+            getattr(risk_authorization, "authorization_id", None) if risk_authorization else None
         )
         order = ExecutionOrder(
             id=order_id,

@@ -41,6 +41,7 @@ from .enums import (
     OrderSide,
     OrderStatus,
     OrderType,
+    UserRole,
 )
 
 
@@ -58,15 +59,11 @@ class Instrument(Base):
     isin: Mapped[str] = mapped_column(String(12), unique=True, index=True, nullable=False)
     symbol: Mapped[str] = mapped_column(String(20), index=True, nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    market: Mapped[str] = mapped_column(
-        String(20), default=MarketType.EQUITY.value, nullable=False
-    )
+    market: Mapped[str] = mapped_column(String(20), default=MarketType.EQUITY.value, nullable=False)
     exchange: Mapped[str] = mapped_column(
         String(10), default=ExchangeCode.NSE.value, nullable=False
     )
-    currency: Mapped[str] = mapped_column(
-        String(3), default=CurrencyCode.INR.value, nullable=False
-    )
+    currency: Mapped[str] = mapped_column(String(3), default=CurrencyCode.INR.value, nullable=False)
     lot_size: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     tick_size: Mapped[Decimal] = mapped_column(
         Numeric(8, 4), default=Decimal("0.0500"), nullable=False
@@ -151,6 +148,101 @@ class DatasetManifest(Base):
     )
 
 
+class User(Base):
+    """User account model for authentication, access, and ownership (SEC-01, SEC-06, Layer 12)."""
+
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(String(20), default=UserRole.USER.value, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    mfa_secret: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    sessions: Mapped[list[UserSession]] = relationship(
+        "UserSession", back_populates="user", cascade="all, delete-orphan"
+    )
+    accounts: Mapped[list[Account]] = relationship("Account", back_populates="user")
+
+    __table_args__ = (CheckConstraint("length(email) >= 3", name="ck_users_email_min_len"),)
+
+
+class UserSession(Base):
+    """Opaque server-side session model (SEC-15, Layer 12).
+
+    The raw session token is NEVER stored in the database. Only the SHA-256 hash is persisted.
+    """
+
+    __tablename__ = "user_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    session_id_hash: Mapped[str] = mapped_column(
+        String(64), unique=True, index=True, nullable=False
+    )
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    idle_timeout_seconds: Mapped[int] = mapped_column(Integer, default=1800, nullable=False)
+    absolute_timeout_seconds: Mapped[int] = mapped_column(Integer, default=43200, nullable=False)
+    is_revoked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    last_active_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), index=True, nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    user: Mapped[User] = relationship("User", back_populates="sessions")
+
+
+class PasswordResetToken(Base):
+    """Single-use password reset token model (SEC-17, Layer 12).
+
+    Raw token is never stored in DB; only SHA-256 hash is persisted.
+    """
+
+    __tablename__ = "password_reset_tokens"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    is_used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class SecurityAuditLog(Base):
+    """Security-event log model for auth, authorization, and access events (SEC-08, Layer 12)."""
+
+    __tablename__ = "security_audit_logs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    event_id: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    event_type: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
+    user_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    details: Mapped[str] = mapped_column(Text, nullable=False)  # JSON-serialized sanitized metadata
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True, nullable=False
+    )
+
+
 class Account(Base):
     """Operational simulation account model.
 
@@ -161,9 +253,10 @@ class Account(Base):
     __tablename__ = "accounts"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    account_number: Mapped[str] = mapped_column(
-        String(50), unique=True, index=True, nullable=False
+    user_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="RESTRICT"), nullable=True, index=True
     )
+    account_number: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), default=CurrencyCode.INR.value, nullable=False)
     initial_scenario_capital: Mapped[Decimal] = mapped_column(
@@ -183,6 +276,7 @@ class Account(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
+    user: Mapped[User | None] = relationship("User", back_populates="accounts")
     portfolios: Mapped[list[Portfolio]] = relationship("Portfolio", back_populates="account")
 
     __table_args__ = (
@@ -213,9 +307,7 @@ class Portfolio(Base):
     positions: Mapped[list[Position]] = relationship("Position", back_populates="portfolio")
     orders: Mapped[list[Order]] = relationship("Order", back_populates="portfolio")
 
-    __table_args__ = (
-        UniqueConstraint("account_id", "name", name="uq_portfolio_account_name"),
-    )
+    __table_args__ = (UniqueConstraint("account_id", "name", name="uq_portfolio_account_name"),)
 
 
 class Position(Base):

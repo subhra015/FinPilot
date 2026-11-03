@@ -60,9 +60,7 @@ def validate_order_transition(
         else OrderStatus(str(current_status))
     )
     target = (
-        target_status
-        if isinstance(target_status, OrderStatus)
-        else OrderStatus(str(target_status))
+        target_status if isinstance(target_status, OrderStatus) else OrderStatus(str(target_status))
     )
 
     if curr == target:

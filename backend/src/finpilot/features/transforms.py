@@ -179,10 +179,7 @@ class DeterministicFeatureScaler:
         scaler.is_fitted = data["is_fitted"]
         scaler.fit_sample_count = data["fit_sample_count"]
         scaler.fit_checksum = data["fit_checksum"]
-        scaler.stats = {
-            k: ScalerFeatureStats(**v)
-            for k, v in data["stats"].items()
-        }
+        scaler.stats = {k: ScalerFeatureStats(**v) for k, v in data["stats"].items()}
         # Verify checksum integrity
         expected_checksum = scaler._compute_checksum()
         if scaler.fit_checksum != expected_checksum:

@@ -187,9 +187,6 @@ def test_evaluator_ml_selection_veto_filter_and_reconciliation(
 
     assert result.model_id == "MODEL-FILTER-TEST"
     assert result.total_proposals_evaluated >= result.proposals_authorized
-    assert (
-        result.proposals_vetoed
-        == result.total_proposals_evaluated - result.proposals_authorized
-    )
+    assert result.proposals_vetoed == result.total_proposals_evaluated - result.proposals_authorized
     assert result.ledger_reconciled is True
     assert result.accounting_discrepancy == Decimal("0.00")

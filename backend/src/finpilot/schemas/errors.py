@@ -14,9 +14,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-_PATH_PATTERN = re.compile(
-    r"([A-Za-z]:\\[^:\s\n\"']+|/(?:[a-zA-Z0-9._-]+/)+[a-zA-Z0-9._-]+)"
-)
+_PATH_PATTERN = re.compile(r"([A-Za-z]:\\[^:\s\n\"']+|/(?:[a-zA-Z0-9._-]+/)+[a-zA-Z0-9._-]+)")
 _SQL_PATTERN = re.compile(
     r"""(?ix)
     \b(select\s+.+?\s+from|insert\s+into|update\s+.+?\s+set|delete\s+from|
@@ -24,9 +22,7 @@ _SQL_PATTERN = re.compile(
     """
 )
 _CREDENTIAL_PATTERN = re.compile(r"(://[^:\s/@]+):([^@\s/]+)@")
-_TOKEN_PATTERN = re.compile(
-    r"(?i)\b(bearer\s+[A-Za-z0-9\-._~+/]+=*|token\s*=\s*['\"]?[^'\"]+)"
-)
+_TOKEN_PATTERN = re.compile(r"(?i)\b(bearer\s+[A-Za-z0-9\-._~+/]+=*|token\s*=\s*['\"]?[^'\"]+)")
 
 
 def sanitize_error_message(message: str) -> str:
@@ -56,7 +52,9 @@ class ErrorCode(enum.StrEnum):
     INVALID_CANDLE = "INVALID_CANDLE"
     INVALID_STATE_TRANSITION = "INVALID_STATE_TRANSITION"
     PERMISSION_DENIED = "PERMISSION_DENIED"
+    UNAUTHORIZED = "UNAUTHORIZED"
     RESOURCE_NOT_FOUND = "RESOURCE_NOT_FOUND"
+    CONFLICT = "CONFLICT"
     INTERNAL_ERROR = "INTERNAL_ERROR"
 
 
@@ -109,19 +107,23 @@ class DomainValidationError(ValueError):
 class InvalidStateTransitionError(DomainValidationError):
     """Raised when an illegal lifecycle state transition is attempted."""
 
-    def __init__(
-        self, current_state: Any, target_state: Any, entity: str = "Order"
-    ) -> None:
+    def __init__(self, current_state: Any, target_state: Any, entity: str = "Order") -> None:
         msg = f"Invalid {entity} state transition from '{current_state}' to '{target_state}'."
         super().__init__(msg, field="status", code=ErrorCode.INVALID_STATE_TRANSITION)
+
+
+class AuthenticationRequiredError(Exception):
+    """Raised when authentication credentials or session are missing or invalid."""
+
+    def __init__(self, message: str = "Authentication required.") -> None:
+        super().__init__(sanitize_error_message(message))
+        self.code = ErrorCode.UNAUTHORIZED
 
 
 class PermissionDeniedError(Exception):
     """Raised when a user attempts to access a resource they do not own."""
 
-    def __init__(
-        self, message: str = "Access denied: unauthorized resource scope."
-    ) -> None:
+    def __init__(self, message: str = "Access denied: unauthorized resource scope.") -> None:
         super().__init__(sanitize_error_message(message))
         self.code = ErrorCode.PERMISSION_DENIED
 

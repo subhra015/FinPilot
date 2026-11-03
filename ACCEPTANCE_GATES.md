@@ -47,7 +47,7 @@ Outcome labels: **PASS**, **FAIL** (check ran and failed), **BLOCKED**
 | 9 | Baseline ML model training | Train approved candidates (LogReg + LightGBM); training-only fit; calibration on CALIBRATION; threshold tuning on validation; locked final-test isolation; safe model loading; selection layer evaluation against baselines | SEC-06,18,23 |
 | 10 | Calibration and selective decision logic | Probability calibration on designated splits; reliability diagrams; Murphy Brier decomposition; 5-state selective decision engine; sample-support & OOD abstention; no double cost subtraction; frozen decision policy; no final-test access | SEC-06,19,23 |
 | 11 | Independent risk engine | Complete independent authority; ML model cannot authorize or bypass; 11 deny-by-default controls; signed RiskAuthorization; admin RBAC & tamper-evident audit; entry vs exit distinction | SEC-01,06,08,09,19 |
-| 12 | Forward paper simulation | Same cost/model path as history; no live orders; mode isolation | SEC-19 |
+| 12 | Secure API, authentication, authorization & audit ledger | NIST SP 800-63B-4 policy; Argon2id; opaque sessions; CSRF; sliding window rate limiting; IDOR ownership defense; RFC 6238 TOTP MFA; append-only audit ledger with SHA-256 hash chaining | SEC-01,02,05,06,08,09,10,11,12,13,15,16,17,24 |
 | 13 | Synthetic demo mode | Clearly labelled `SYNTHETIC DEMO`; cannot be reported as market evidence | SEC-06,19 |
 | 14 | Backend API & authentication | Authn on all private endpoints; server-side validation; least-privilege DB; sessions/cookies | SEC-01,05,06,08,10,12,15,16,17 |
 | 15 | Frontend research UI | No secrets in frontend; CSP; context-safe output; frontend non-authoritative | SEC-02,07,13,14 |

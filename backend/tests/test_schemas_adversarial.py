@@ -37,7 +37,7 @@ IST_VALID_TS = datetime(2026, 10, 30, 9, 15, 0, tzinfo=UTC)
         "'; TRUNCATE TABLE users; --",
         "1 UNION SELECT username, password_hash FROM users --",
         "admin'--",
-        "\" OR \"\"=\"",
+        '" OR ""="',
         "'; EXEC xp_cmdshell('dir'); --",
     ],
 )

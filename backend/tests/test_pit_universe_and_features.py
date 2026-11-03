@@ -107,9 +107,7 @@ def test_pit_universe_ineligibility_exclusion() -> None:
             "NEWCO", eval_time + timedelta(minutes=10), 102.0, 106.0, 101.0, 105.0, instrument_id=2
         ),
     ]
-    feat_newco = {
-        bars_newco[0].timestamp: make_feature_vector("NEWCO", eval_time, instrument_id=2)
-    }
+    feat_newco = {bars_newco[0].timestamp: make_feature_vector("NEWCO", eval_time, instrument_id=2)}
 
     # Generating labels with PIT manager must exclude NEWCO because it's not listed as of 2026-01-15
     labels, excluded_count = generator.generate_labels_for_series(

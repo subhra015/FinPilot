@@ -61,8 +61,7 @@ def test_baselines_run_under_strictly_identical_execution_parameters() -> None:
     assert cfg_notrade.volume_participation_cap == cfg_simple.volume_participation_cap
     assert cfg_notrade.modelled_slippage_bps == cfg_simple.modelled_slippage_bps
     assert (
-        cfg_notrade.max_single_position_exposure_pct
-        == cfg_simple.max_single_position_exposure_pct
+        cfg_notrade.max_single_position_exposure_pct == cfg_simple.max_single_position_exposure_pct
     )
 
     runner = BaselineExperimentRunner()

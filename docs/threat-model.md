@@ -1,9 +1,9 @@
 # FinPilot AI — Threat Model
 
-Status: **Layer 0 initial; Layer 1 foundation controls recorded** (full review in
+Status: **Layer 0 initial; Layer 1 and Layer 12 controls implemented & verified** (full review in
 Layer 17, per SEC-26).
 Related: `SECURITY.md`, `SECURITY_CHECKLIST.md`, `ARCHITECTURE.md`,
-`docs/data-rights-matrix.md`.
+`docs/data-rights-matrix.md`, `docs/api-auth-specification.md`.
 
 ---
 
@@ -55,18 +55,18 @@ elevation of privilege).
 
 | Surface | Threats (STRIDE) | Controls | Layer |
 |---|---|---|---|
-| Auth endpoints (login/reset/register) | Spoofing, brute force, DoS | SEC-01,05,12,15,16,17 | L12/L14 |
-| Private APIs (portfolio/ledger/account/model) | Info disclosure, IDOR, EoP | SEC-01,06,09,10 | L12 |
-| Admin endpoints | EoP, Info disclosure | SEC-09,15 | L12/L14 |
+| Auth endpoints (login/reset/register) | Spoofing, brute force, DoS | SEC-01,05,12,15,16,17 | L12 (Verified) |
+| Private APIs (portfolio/ledger/account/model) | Info disclosure, IDOR, EoP | SEC-01,06,09,10 | L12 (Verified) |
+| Admin endpoints | EoP, Info disclosure | SEC-09,15 | L12 (Verified) |
 | Frontend/SDK build | Info disclosure (secrets), XSS | SEC-02,07,13,14 | L13/L14 |
-| API input handling | Tampering, injection | SEC-06,10 | L12 + data layers |
+| API input handling | Tampering, injection | SEC-06,10 | L12 (Verified) |
 | Database | Tampering, Info disclosure | SEC-03,10 | L1 |
 | Data provider feed | Tampering (bad data), Info disclosure, provenance loss | SEC-06,19 + `DATA_AND_PERFORMANCE_POLICY.md` §1 | L2 |
 | Price/cost/size inputs | Tampering (client-forged) | SEC-19 (server authoritative) | L2/L4/L5/L6 |
 | Hosted notebooks | Info disclosure (secrets), EoP, supply chain | SEC-02,23,24; `docs/data-rights-matrix.md` | L1/L13/L17 |
 | File imports (future) | RCE, traversal, DoS, parser exploits | SEC-18 | future |
 | Secrets/env | Info disclosure | SEC-02,11 | L1/L16 |
-| Logs | Info disclosure (secrets/PII) | SEC-08 | L1/L15 |
+| Logs | Info disclosure (secrets/PII) | SEC-08 | L1/L12/L15 |
 | Model artifacts | Tampering, Info disclosure | SEC-08,23,24 | L8/L15/L17 |
 | Deployment artefacts | Exposed files, source maps | SEC-20,23 | L16/L17 |
 | Git history | Info disclosure (committed secrets) | SEC-24,25 | L17 |
@@ -109,10 +109,14 @@ owner/layer/test plan.
 - Foreign markets excluded until Indian pipeline validated.
 - Hosted-notebook policy (`OD-06`) is `OPEN`; until resolved, notebooks must not
   receive production secrets or licensed data beyond permitted use.
-- **Layer 1 controls now present:** fail-closed production config validation,
+- **Layer 1 controls present:** fail-closed production config validation,
   log redaction, explicit-origin CORS, security headers, HSTS (production only),
   reversible migration baseline, dependency audits and secret scanning of the
   current tree and full Git history. See `docs/layers/layer-01/README.md`.
+- **Layer 12 controls present:** Argon2id password hashing, NIST SP 800-63B-4 policy,
+  opaque server sessions, CSRF protection, sliding window rate limiting, IDOR ownership
+  enforcement, RFC 6238 TOTP MFA, and append-only cryptographic ledger with sequential
+  SHA-256 hash chaining. See `docs/layers/layer-12/README.md`.
 
 ## 9. Refresh
 

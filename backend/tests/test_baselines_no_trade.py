@@ -38,7 +38,7 @@ def test_no_trade_experiment_run_produces_zero_drift_and_ledger_reconciliation()
         strategy_id="REF-NOTRADE-V1",
         universe=("RELIANCE", "TCS"),
         start_date=date(2026, 1, 5),  # Monday
-        end_date=date(2026, 1, 9),    # Friday (5 full sessions)
+        end_date=date(2026, 1, 9),  # Friday (5 full sessions)
         initial_capital=Decimal("30000.00"),
         mode=DataMode.SYNTHETIC_DEMO,
     )

@@ -96,9 +96,7 @@ class OODDetector:
         self._is_fitted = True
         return self
 
-    def check_sample(
-        self, features_dict: dict[str, float | None]
-    ) -> tuple[bool, list[str]]:
+    def check_sample(self, features_dict: dict[str, float | None]) -> tuple[bool, list[str]]:
         """Check if a sample contains any feature value that is out-of-distribution.
 
         Returns:
@@ -130,9 +128,7 @@ class OODDetector:
         return {feat: [float(low), float(high)] for feat, (low, high) in self.bounds.items()}
 
     @classmethod
-    def from_bounds_dict(
-        cls, bounds_dict: Mapping[str, Sequence[float]]
-    ) -> OODDetector:
+    def from_bounds_dict(cls, bounds_dict: Mapping[str, Sequence[float]]) -> OODDetector:
         """Instantiate a pre-fitted OODDetector directly from serializable bounds."""
         feature_names = list(bounds_dict.keys())
         parsed_bounds = {feat: (float(b[0]), float(b[1])) for feat, b in bounds_dict.items()}

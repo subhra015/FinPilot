@@ -141,8 +141,7 @@ class RiskEvaluator:
         if model_id not in self.config.approved_model_ids:
             rejection_reasons.append(RiskRejectionReason.MODEL_VERSION_MISMATCH)
             rejection_details.append(
-                f"Model ID '{model_id}' is not in approved models: "
-                f"{self.config.approved_model_ids}"
+                f"Model ID '{model_id}' is not in approved models: {self.config.approved_model_ids}"
             )
 
         # ------------------------------------------------------------------
@@ -227,8 +226,8 @@ class RiskEvaluator:
         if current_drawdown_pct >= self.config.max_drawdown_pct:
             rejection_reasons.append(RiskRejectionReason.DRAWDOWN_SUSPENSION_TRIGGERED)
             rejection_details.append(
-                f"Current drawdown ({current_drawdown_pct*100:.1f}%) reached suspension threshold "
-                f"({self.config.max_drawdown_pct*100:.1f}%)."
+                f"Drawdown ({current_drawdown_pct * 100:.1f}%) reached suspension threshold "
+                f"({self.config.max_drawdown_pct * 100:.1f}%)."
             )
             is_suspended = True
 
@@ -287,7 +286,7 @@ class RiskEvaluator:
                 rejection_details.append(
                     f"Planned stop risk ₹{planned_stop_risk} exceeds limit "
                     f"₹{max_allowed_stop_risk} "
-                    f"({self.config.max_planned_stop_risk_pct*100}% of equity)."
+                    f"({self.config.max_planned_stop_risk_pct * 100}% of equity)."
                 )
 
         # ------------------------------------------------------------------

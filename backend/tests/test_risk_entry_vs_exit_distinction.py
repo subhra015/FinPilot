@@ -158,9 +158,7 @@ def test_exit_allowed_when_max_concurrent_positions_is_reached(
     midday_candle = post_cutoff_candle.model_copy(
         update={"timestamp": midday_ts, "retrieval_time": midday_ts}
     )
-    midday_proposal = valid_entry_proposal.model_copy(
-        update={"decision_timestamp": midday_ts}
-    )
+    midday_proposal = valid_entry_proposal.model_copy(update={"decision_timestamp": midday_ts})
 
     entry_res = evaluator.evaluate_entry_proposal(
         proposal=midday_proposal,

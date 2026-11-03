@@ -79,9 +79,7 @@ def fitted_pipeline() -> MLSelectionPipeline:
     return pipeline
 
 
-def test_registry_save_and_safe_load(
-    tmp_path: Path, fitted_pipeline: MLSelectionPipeline
-) -> None:
+def test_registry_save_and_safe_load(tmp_path: Path, fitted_pipeline: MLSelectionPipeline) -> None:
     """Verify clean save and cryptographic reload of trusted model artifact."""
     registry = ModelRegistry(registry_dir=tmp_path)
     metadata = make_metadata("MODEL-LOGREG-REGISTRY-TEST", 0.52)
@@ -147,9 +145,8 @@ def test_registry_path_traversal_rejection(tmp_path: Path) -> None:
     for bad_name in traversal_names:
         with pytest.raises(UntrustedArtifactError) as exc_info:
             registry.load_model(bad_name)
-        assert (
-            "Invalid or uncontained" in str(exc_info.value)
-            or "Path traversal detected" in str(exc_info.value)
+        assert "Invalid or uncontained" in str(exc_info.value) or "Path traversal detected" in str(
+            exc_info.value
         )
 
 

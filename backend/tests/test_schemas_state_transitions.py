@@ -27,9 +27,7 @@ from finpilot.schemas import (
         (OrderStatus.PARTIALLY_FILLED, OrderStatus.EXPIRED),
     ],
 )
-def test_valid_order_transitions_succeed(
-    current: OrderStatus, target: OrderStatus
-) -> None:
+def test_valid_order_transitions_succeed(current: OrderStatus, target: OrderStatus) -> None:
     result = validate_order_transition(current, target)
     assert result == target
 
@@ -47,9 +45,7 @@ def test_valid_order_transitions_succeed(
         (OrderStatus.EXPIRED, OrderStatus.APPROVED),  # Terminal state
     ],
 )
-def test_invalid_order_transitions_rejected(
-    current: OrderStatus, target: OrderStatus
-) -> None:
+def test_invalid_order_transitions_rejected(current: OrderStatus, target: OrderStatus) -> None:
     with pytest.raises(InvalidStateTransitionError) as exc:
         validate_order_transition(current, target)
     assert f"Invalid Order state transition from '{current.value}' to '{target.value}'" in str(

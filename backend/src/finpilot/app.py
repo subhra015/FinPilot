@@ -17,9 +17,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from .api import (
+    account_router,
+    auth_router,
+    ledger_router,
+    model_router,
+    portfolio_router,
+    risk_router,
+)
 from .config import Settings, load_settings
 from .logging_config import configure_logging
 from .schemas.errors import (
+    AuthenticationRequiredError,
     DomainValidationError,
     ErrorCode,
     ErrorDetail,
@@ -123,6 +132,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
         return JSONResponse(status_code=422, content=resp.model_dump())
 
+    @app.exception_handler(AuthenticationRequiredError)
+    async def authentication_required_handler(
+        request: Request, exc: AuthenticationRequiredError
+    ) -> JSONResponse:
+        resp = ErrorResponse(error=str(exc), code=ErrorCode.UNAUTHORIZED)
+        return JSONResponse(status_code=401, content=resp.model_dump())
+
     @app.exception_handler(PermissionDeniedError)
     async def permission_denied_handler(
         request: Request, exc: PermissionDeniedError
@@ -140,5 +156,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/healthz", tags=["ops"])
     def healthz() -> dict[str, str]:
         return {"status": "ok", "env": settings.app_env.value}
+
+    # API Routers (SEC-01, Layer 12)
+    app.include_router(auth_router, prefix="/api")
+    app.include_router(account_router, prefix="/api")
+    app.include_router(portfolio_router, prefix="/api")
+    app.include_router(ledger_router, prefix="/api")
+    app.include_router(risk_router, prefix="/api")
+    app.include_router(model_router, prefix="/api")
 
     return app

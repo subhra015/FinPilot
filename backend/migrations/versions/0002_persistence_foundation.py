@@ -91,12 +91,8 @@ def upgrade() -> None:
         "instrument_symbol_history",
         ["instrument_id"],
     )
-    op.create_index(
-        "ix_instrument_symbol_history_symbol", "instrument_symbol_history", ["symbol"]
-    )
-    op.create_index(
-        "ix_symbol_history_lookup", "instrument_symbol_history", ["symbol", "valid_to"]
-    )
+    op.create_index("ix_instrument_symbol_history_symbol", "instrument_symbol_history", ["symbol"])
+    op.create_index("ix_symbol_history_lookup", "instrument_symbol_history", ["symbol", "valid_to"])
 
     # 3. dataset_manifests table
     op.create_table(
@@ -146,9 +142,7 @@ def upgrade() -> None:
             server_default="30000.00",
             nullable=False,
         ),
-        sa.Column(
-            "mode", sa.String(length=20), server_default="HISTORICAL_REPLAY", nullable=False
-        ),
+        sa.Column("mode", sa.String(length=20), server_default="HISTORICAL_REPLAY", nullable=False),
         sa.Column("is_active", sa.Boolean(), server_default=sa.true(), nullable=False),
         sa.Column(
             "created_at",
@@ -180,9 +174,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("name", sa.String(length=100), nullable=False),
-        sa.Column(
-            "mode", sa.String(length=20), server_default="HISTORICAL_REPLAY", nullable=False
-        ),
+        sa.Column("mode", sa.String(length=20), server_default="HISTORICAL_REPLAY", nullable=False),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -234,9 +226,7 @@ def upgrade() -> None:
             server_default="0.0000",
             nullable=False,
         ),
-        sa.Column(
-            "mode", sa.String(length=20), server_default="HISTORICAL_REPLAY", nullable=False
-        ),
+        sa.Column("mode", sa.String(length=20), server_default="HISTORICAL_REPLAY", nullable=False),
         sa.Column(
             "updated_at",
             sa.DateTime(timezone=True),
@@ -278,9 +268,7 @@ def upgrade() -> None:
         sa.Column("price", sa.Numeric(precision=12, scale=4), nullable=True),
         sa.Column("status", sa.String(length=20), server_default="PENDING", nullable=False),
         sa.Column("risk_authorization_id", sa.String(length=100), nullable=True),
-        sa.Column(
-            "mode", sa.String(length=20), server_default="HISTORICAL_REPLAY", nullable=False
-        ),
+        sa.Column("mode", sa.String(length=20), server_default="HISTORICAL_REPLAY", nullable=False),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -347,9 +335,7 @@ def upgrade() -> None:
     op.create_index("ix_ledger_events_instrument_id", "ledger_events", ["instrument_id"])
     op.create_index("ix_ledger_events_mode", "ledger_events", ["mode"])
     op.create_index("ix_ledger_events_timestamp", "ledger_events", ["timestamp"])
-    op.create_index(
-        "ix_ledger_events_mode_timestamp", "ledger_events", ["mode", "timestamp"]
-    )
+    op.create_index("ix_ledger_events_mode_timestamp", "ledger_events", ["mode", "timestamp"])
 
 
 def downgrade() -> None:

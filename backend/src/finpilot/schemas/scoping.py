@@ -34,9 +34,7 @@ def enforce_resource_owner(
         return
 
     if resource_owner_id != user_scope.user_id:
-        raise PermissionDeniedError(
-            f"Access denied: unauthorized {resource_name} scope."
-        )
+        raise PermissionDeniedError(f"Access denied: unauthorized {resource_name} scope.")
 
 
 def enforce_account_access(

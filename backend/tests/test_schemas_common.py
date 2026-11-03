@@ -122,7 +122,9 @@ def test_error_message_sanitization_removes_paths_sql_and_secrets() -> None:
     assert "[DATABASE_QUERY_REDACTED]" in clean_sql
 
     # Credential sanitization
-    raw_cred_err = "Failed to connect to postgresql+psycopg://app:SECRET_PASS_999@db.internal:5432/db"
+    raw_cred_err = (
+        "Failed to connect to postgresql+psycopg://app:SECRET_PASS_999@db.internal:5432/db"
+    )
     clean_cred = sanitize_error_message(raw_cred_err)
     assert "SECRET_PASS_999" not in clean_cred
     assert "[REDACTED]@" in clean_cred

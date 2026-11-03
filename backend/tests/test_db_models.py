@@ -489,7 +489,5 @@ def test_transaction_atomicity_and_rollback(db_session: Session) -> None:
         pass
 
     # Verify acct was NOT persisted due to atomic rollback
-    retrieved = db_session.scalar(
-        select(Account).where(Account.account_number == "FP-ATOMIC-001")
-    )
+    retrieved = db_session.scalar(select(Account).where(Account.account_number == "FP-ATOMIC-001"))
     assert retrieved is None

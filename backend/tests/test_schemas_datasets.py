@@ -62,8 +62,7 @@ def test_invalid_sha256_checksum_rejected(bad_checksum: str) -> None:
             schema_version="v1",
         )
     assert any(
-        token in str(exc.value).lower()
-        for token in ("sha-256", "sha256", "checksum", "character")
+        token in str(exc.value).lower() for token in ("sha-256", "sha256", "checksum", "character")
     )
 
 

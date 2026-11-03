@@ -72,9 +72,7 @@ class CalibrationBin(BaseModel):
     avg_net_loss: Decimal = Field(
         default=Decimal("0.00"), description="Average net P&L of losing trades in INR (negative)"
     )
-    max_loss: Decimal = Field(
-        default=Decimal("0.00"), description="Worst single trade loss in INR"
-    )
+    max_loss: Decimal = Field(default=Decimal("0.00"), description="Worst single trade loss in INR")
     cvar_95: Decimal = Field(
         default=Decimal("0.00"), description="95% Conditional Value at Risk in INR (worst 5% mean)"
     )
@@ -106,9 +104,7 @@ class BrierDecomposition(BaseModel):
     uncertainty: float = Field(
         ..., ge=0.0, description="Inherent problem variance component: p_bar * (1 - p_bar)"
     )
-    decomposition_sum: float = Field(
-        ..., description="Reliability - Resolution + Uncertainty"
-    )
+    decomposition_sum: float = Field(..., description="Reliability - Resolution + Uncertainty")
 
 
 class ReliabilityDiagramData(BaseModel):

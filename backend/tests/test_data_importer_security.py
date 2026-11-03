@@ -93,8 +93,7 @@ def test_csv_schema_and_column_bounds_enforced(tmp_path: Path) -> None:
 
     # Missing mandatory columns (missing 'volume' and 'high')
     incomplete_csv = (
-        b"symbol,timestamp,open,low,close\n"
-        b"RELIANCE,2026-10-30T09:15:00+00:00,2500,2490,2510\n"
+        b"symbol,timestamp,open,low,close\nRELIANCE,2026-10-30T09:15:00+00:00,2500,2490,2510\n"
     )
     with pytest.raises(DomainValidationError) as exc_missing:
         importer.import_file("test.csv", incomplete_csv)

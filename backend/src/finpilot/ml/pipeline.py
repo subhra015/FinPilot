@@ -229,8 +229,7 @@ class MLSelectionPipeline:
                 f"Missing required features: {missing}. Expected: {self.feature_names}"
             )
         extra = [
-            f for f in features_dict
-            if f not in self.feature_names and f not in FEATURE_CATALOG_V1
+            f for f in features_dict if f not in self.feature_names and f not in FEATURE_CATALOG_V1
         ]
         if extra:
             raise SchemaMismatchError(
@@ -241,9 +240,7 @@ class MLSelectionPipeline:
         for f in self.feature_names:
             val = features_dict[f]
             if val is not None and (math.isnan(val) or math.isinf(val)):
-                raise SchemaMismatchError(
-                    f"Non-finite feature value {val!r} in feature {f!r}."
-                )
+                raise SchemaMismatchError(f"Non-finite feature value {val!r} in feature {f!r}.")
             row.append(np.nan if val is None else float(val))
 
         return np.array([row], dtype=np.float64)

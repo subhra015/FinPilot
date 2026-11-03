@@ -40,14 +40,16 @@ def trained_pipeline() -> MLSelectionPipeline:
         decision_threshold=0.50,
     )
     # Synthetic training data with realistic indicator scales
-    base_X = np.array([
-        [-0.02, 0.98, 30.0, 0.8],  # low (class 0)
-        [-0.01, 0.99, 40.0, 0.9],  # low (class 0)
-        [0.00, 1.00, 50.0, 1.0],   # mid (class 0)
-        [0.005, 1.01, 60.0, 1.2],  # high (class 1)
-        [0.01, 1.02, 70.0, 1.8],   # high (class 1)
-        [0.05, 1.08, 92.0, 4.0],   # extreme (class 1)
-    ])
+    base_X = np.array(
+        [
+            [-0.02, 0.98, 30.0, 0.8],  # low (class 0)
+            [-0.01, 0.99, 40.0, 0.9],  # low (class 0)
+            [0.00, 1.00, 50.0, 1.0],  # mid (class 0)
+            [0.005, 1.01, 60.0, 1.2],  # high (class 1)
+            [0.01, 1.02, 70.0, 1.8],  # high (class 1)
+            [0.05, 1.08, 92.0, 4.0],  # extreme (class 1)
+        ]
+    )
     base_y = np.array([0, 0, 0, 1, 1, 1])
 
     X_train = np.repeat(base_X, 25, axis=0)

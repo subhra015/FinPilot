@@ -109,7 +109,8 @@ class SelectiveDecisionEngine:
             data_flags.append(f"Missing required features: {missing_features}")
 
         unapproved_features = [
-            f for f in features_dict
+            f
+            for f in features_dict
             if f not in self.pipeline.feature_names and f not in FEATURE_CATALOG_V1
         ]
         if unapproved_features:

@@ -143,9 +143,7 @@ def test_fixture_3_same_bar_stop_target_collision_and_sensitivity() -> None:
     col_bar = make_candle("INFY", 9, 25, 1500.0, 1620.0, 1430.0, 1550.0, 1000)
 
     # 1. Conservative Stop-First Simulation
-    sim_cons = ExecutionSimulator(
-        ambiguity_treatment=AmbiguityTreatment.CONSERVATIVE_STOP_FIRST
-    )
+    sim_cons = ExecutionSimulator(ambiguity_treatment=AmbiguityTreatment.CONSERVATIVE_STOP_FIRST)
     mgr_cons = PortfolioManager()
     prop_cons = TradeProposal(
         proposal_id="p_c1",
@@ -174,9 +172,7 @@ def test_fixture_3_same_bar_stop_target_collision_and_sensitivity() -> None:
     mgr_cons.apply_fill(exit_cons)
 
     # 2. Optimistic Target-First Simulation (Sensitivity Check)
-    sim_opt = ExecutionSimulator(
-        ambiguity_treatment=AmbiguityTreatment.OPTIMISTIC_TARGET_FIRST
-    )
+    sim_opt = ExecutionSimulator(ambiguity_treatment=AmbiguityTreatment.OPTIMISTIC_TARGET_FIRST)
     mgr_opt = PortfolioManager()
     prop_opt = TradeProposal(
         proposal_id="p_o1",

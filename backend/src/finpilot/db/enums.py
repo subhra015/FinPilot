@@ -71,16 +71,40 @@ class OrderStatus(enum.StrEnum):
     EXPIRED = "EXPIRED"
 
 
+class UserRole(enum.StrEnum):
+    """User authorization roles (SEC-01, SEC-09, Layer 12)."""
+
+    USER = "USER"
+    ADMIN = "ADMIN"
+    SERVICE = "SERVICE"
+
+
+class MFAMethod(enum.StrEnum):
+    """Multi-Factor Authentication methods."""
+
+    TOTP = "TOTP"
+    WEBAUTHN = "WEBAUTHN"
+
+
 class LedgerEventType(enum.StrEnum):
     """Event types recorded in the append-only prediction/event ledger."""
 
+    ACCEPTED = "ACCEPTED"
     DECISION = "DECISION"
-    ORDER_CREATED = "ORDER_CREATED"
+    NO_TRADE = "NO_TRADE"
+    INSUFFICIENT_DATA = "INSUFFICIENT_DATA"
     RISK_APPROVED = "RISK_APPROVED"
     RISK_REJECTED = "RISK_REJECTED"
+    ORDER_CREATED = "ORDER_CREATED"
     FILL = "FILL"
     PARTIAL_FILL = "PARTIAL_FILL"
+    ENTRY_UNFILLED = "ENTRY_UNFILLED"
+    EXECUTION_UNRESOLVED = "EXECUTION_UNRESOLVED"
     EXIT = "EXIT"
     EXPIRY = "EXPIRY"
     FEE_APPLIED = "FEE_APPLIED"
     BALANCE_UPDATE = "BALANCE_UPDATE"
+    CORRECTION = "CORRECTION"
+    OPPORTUNITY_OMITTED = "OPPORTUNITY_OMITTED"
+    PORTFOLIO_OUTCOME = "PORTFOLIO_OUTCOME"
+    HYPOTHETICAL_OUTCOME = "HYPOTHETICAL_OUTCOME"

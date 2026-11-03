@@ -81,9 +81,9 @@ def test_reliability_with_net_pnls_and_downside_risk() -> None:
     y_true = np.array([0, 1, 1, 1])
     net_pnls = [
         Decimal("-250.00"),  # Bin 0 loss
-        Decimal("400.00"),   # Bin 0 win
-        Decimal("600.00"),   # Bin 1 win
-        Decimal("800.00"),   # Bin 1 win
+        Decimal("400.00"),  # Bin 0 win
+        Decimal("600.00"),  # Bin 1 win
+        Decimal("800.00"),  # Bin 1 win
     ]
 
     rel_data = evaluator.evaluate(

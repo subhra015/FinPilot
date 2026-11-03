@@ -27,12 +27,8 @@ class InstrumentBase(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    isin: str = Field(
-        ..., min_length=12, max_length=12, description="Permanent 12-character ISIN"
-    )
-    symbol: str = Field(
-        ..., min_length=1, max_length=20, description="Active NSE trading symbol"
-    )
+    isin: str = Field(..., min_length=12, max_length=12, description="Permanent 12-character ISIN")
+    symbol: str = Field(..., min_length=1, max_length=20, description="Active NSE trading symbol")
     name: str = Field(
         ..., min_length=1, max_length=100, description="Instrument legal / display name"
     )
@@ -40,9 +36,7 @@ class InstrumentBase(BaseModel):
     exchange: ExchangeCode = Field(default=ExchangeCode.NSE)
     currency: CurrencyCode = Field(default=CurrencyCode.INR)
     lot_size: int = Field(default=1, ge=1, le=100000)
-    tick_size: Decimal = Field(
-        default=Decimal("0.0500"), gt=Decimal("0"), le=Decimal("100.0000")
-    )
+    tick_size: Decimal = Field(default=Decimal("0.0500"), gt=Decimal("0"), le=Decimal("100.0000"))
     status: InstrumentStatus = Field(default=InstrumentStatus.ACTIVE)
 
     @field_validator("isin")

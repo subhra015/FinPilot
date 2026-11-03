@@ -57,9 +57,7 @@ def make_label(
         net_return=Decimal("0.0015"),
         binary_label=1 if net_pnl > 0 else 0,
         outcome_reason=(
-            TradeOutcomeReason.TARGET_HIT
-            if net_pnl > 0
-            else TradeOutcomeReason.STOP_LOSS_HIT
+            TradeOutcomeReason.TARGET_HIT if net_pnl > 0 else TradeOutcomeReason.STOP_LOSS_HIT
         ),
         is_ambiguous_exit=False,
         is_gap_fill=False,
