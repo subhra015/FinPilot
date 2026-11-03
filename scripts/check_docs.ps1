@@ -42,6 +42,7 @@ $required = @(
     'docs/calibration-methodology.md',
     'docs/risk-engine-policy.md',
     'docs/api-auth-specification.md',
+    'docs/user-flow.md',
     'docs/layers/README.md',
     'docs/layers/layer-00/README.md',
     'docs/layers/layer-01/README.md',
@@ -55,7 +56,8 @@ $required = @(
     'docs/layers/layer-09/README.md',
     'docs/layers/layer-10/README.md',
     'docs/layers/layer-11/README.md',
-    'docs/layers/layer-12/README.md'
+    'docs/layers/layer-12/README.md',
+    'docs/layers/layer-13/README.md'
 )
 
 Write-Output "== Required documents =="
