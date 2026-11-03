@@ -40,6 +40,7 @@ $required = @(
     'docs/validation-protocol.md',
     'docs/model-registry.md',
     'docs/calibration-methodology.md',
+    'docs/risk-engine-policy.md',
     'docs/layers/README.md',
     'docs/layers/layer-00/README.md',
     'docs/layers/layer-01/README.md',
@@ -51,7 +52,8 @@ $required = @(
     'docs/layers/layer-07/README.md',
     'docs/layers/layer-08/README.md',
     'docs/layers/layer-09/README.md',
-    'docs/layers/layer-10/README.md'
+    'docs/layers/layer-10/README.md',
+    'docs/layers/layer-11/README.md'
 )
 
 Write-Output "== Required documents =="

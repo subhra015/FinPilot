@@ -32,6 +32,11 @@ from .models import (
     SimulatedTradeResult,
 )
 
+try:
+    from finpilot.risk.models import RiskAuthorization
+except ImportError:
+    RiskAuthorization = Any  # type: ignore[misc, assignment]
+
 
 class PortfolioManager:
     """Manages cash, pending reservations, positions, order state, and append-only ledger events.
@@ -53,6 +58,7 @@ class PortfolioManager:
         fee_schedule: BaseFeeSchedule | None = None,
         max_exposure_per_instrument: Decimal = Decimal("1.00"),  # Up to 100% of capital
         mode: DataMode = DataMode.HISTORICAL_REPLAY,
+        enforce_risk_authorization: bool = False,
     ) -> None:
         self.account_id = account_id
         self.portfolio_id = portfolio_id
@@ -60,6 +66,7 @@ class PortfolioManager:
         self.fee_schedule = fee_schedule or NSEEquityIntradayFeeSchedule()
         self.max_exposure_per_instrument = max_exposure_per_instrument
         self.mode = mode
+        self.enforce_risk_authorization = enforce_risk_authorization
 
         # Accounting state
         self.available_cash = initial_capital
@@ -137,11 +144,61 @@ class PortfolioManager:
 
         return accepted_orders
 
-    def submit_proposal(self, proposal: TradeProposal) -> ExecutionOrder | None:
+    def submit_proposal(
+        self,
+        proposal: TradeProposal,
+        risk_authorization: Any | None = None,
+    ) -> ExecutionOrder | None:
         """Submit a single trade proposal, reserving required cash.
 
-        Rejects if duplicate, insufficient cash, or exposure cap exceeded.
+        Rejects if duplicate, insufficient cash, exposure cap exceeded, or unauthorized.
         """
+        # Independent Risk Authority check (Layer 11)
+        if self.enforce_risk_authorization:
+            if risk_authorization is None:
+                self.rejected_proposals.append(
+                    (proposal, OrderRejectionReason.UNAUTHORIZED)
+                )
+                self._record_ledger_event(
+                    event_type="PROPOSAL_REJECTED_UNAUTHORIZED",
+                    instrument_id=proposal.instrument_id,
+                    payload={
+                        "proposal_id": proposal.proposal_id,
+                        "symbol": proposal.symbol,
+                        "reason": OrderRejectionReason.UNAUTHORIZED,
+                        "details": "Missing required RiskAuthorization token.",
+                    },
+                    timestamp=proposal.decision_timestamp,
+                )
+                return None
+
+            # Verify authorization matches proposal and integrity signature
+            matches_proposal = (
+                getattr(risk_authorization, "proposal_id", None) == proposal.proposal_id
+                and getattr(risk_authorization, "symbol", None) == proposal.symbol
+                and getattr(risk_authorization, "policy_version", None) == proposal.policy_version
+            )
+            has_valid_sig = (
+                hasattr(risk_authorization, "verify_signature")
+                and risk_authorization.verify_signature()
+            )
+            if not matches_proposal or not has_valid_sig:
+                self.rejected_proposals.append(
+                    (proposal, OrderRejectionReason.UNAUTHORIZED)
+                )
+                self._record_ledger_event(
+                    event_type="PROPOSAL_REJECTED_UNAUTHORIZED",
+                    instrument_id=proposal.instrument_id,
+                    payload={
+                        "proposal_id": proposal.proposal_id,
+                        "symbol": proposal.symbol,
+                        "reason": OrderRejectionReason.UNAUTHORIZED,
+                        "details": "RiskAuthorization mismatch or invalid signature.",
+                    },
+                    timestamp=proposal.decision_timestamp,
+                )
+                return None
+
         # Duplicate check
         if proposal.proposal_id in [o.proposal_id for o in self.open_orders.values()]:
             self.rejected_proposals.append(
@@ -198,6 +255,11 @@ class PortfolioManager:
 
         # Create Execution Order
         order_id = f"ord_{proposal.proposal_id[:12]}_{uuid.uuid4().hex[:6]}"
+        auth_id = (
+            getattr(risk_authorization, "authorization_id", None)
+            if risk_authorization
+            else None
+        )
         order = ExecutionOrder(
             id=order_id,
             proposal_id=proposal.proposal_id,
@@ -216,7 +278,7 @@ class PortfolioManager:
             expiry_timestamp=proposal.earliest_entry_timestamp + timedelta(minutes=5),
             stop_loss=proposal.stop_loss,
             target_price=proposal.target_price,
-            risk_authorization_id=None,
+            risk_authorization_id=auth_id,
             mode=proposal.mode,
         )
 

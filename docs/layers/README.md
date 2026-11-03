@@ -16,16 +16,17 @@ Each layer's full report lives in `docs/layers/layer-XX/README.md`.
 | 8 | Labeling and temporal validation design | PASS | 2026-11-03 | _pending human approval_ | [layer-08](layer-08/README.md) |
 | 9 | Baseline ML model training | PASS | 2026-11-03 | _pending human approval_ | [layer-09](layer-09/README.md) |
 | 10 | Calibration & selective decision logic | PASS | 2026-11-03 | _pending human approval_ | [layer-10](layer-10/README.md) |
-| 11 | Historical evaluation harness | NOT STARTED | — | — | — |
-| 12 | Forward paper simulation | NOT STARTED | — | — | — |
-| 13 | Synthetic demo mode | NOT STARTED | — | — | — |
-| 14 | Backend API & authentication | NOT STARTED | — | — | — |
-| 15 | Frontend research UI | NOT STARTED | — | — | — |
-| 16 | Security hardening & abuse controls | NOT STARTED | — | — | — |
-| 17 | Observability, logging & monitoring | NOT STARTED | — | — | — |
-| 18 | Deployment, HTTPS & production env | NOT STARTED | — | — | — |
-| 19 | Full security review & verification | NOT STARTED | — | — | — |
-| 20 | Final evaluation & verdicts | NOT STARTED | — | — | — |
+| 11 | Independent risk engine | PASS | 2026-11-03 | _pending human approval_ | [layer-11](layer-11/README.md) |
+| 12 | Historical evaluation harness | NOT STARTED | — | — | — |
+| 13 | Forward paper simulation | NOT STARTED | — | — | — |
+| 14 | Synthetic demo mode | NOT STARTED | — | — | — |
+| 15 | Backend API & authentication | NOT STARTED | — | — | — |
+| 16 | Frontend research UI | NOT STARTED | — | — | — |
+| 17 | Security hardening & abuse controls | NOT STARTED | — | — | — |
+| 18 | Observability, logging & monitoring | NOT STARTED | — | — | — |
+| 19 | Deployment, HTTPS & production env | NOT STARTED | — | — | — |
+| 20 | Full security review & verification | NOT STARTED | — | — | — |
+| 21 | Final evaluation & verdicts | NOT STARTED | — | — | — |
 
 Layer numbering is a plan (`ACCEPTANCE_GATES.md`); the human approver may
 re-order. Defining a layer/gate does not implement it.

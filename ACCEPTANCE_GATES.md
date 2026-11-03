@@ -46,7 +46,7 @@ Outcome labels: **PASS**, **FAIL** (check ran and failed), **BLOCKED**
 | 8 | Labeling and temporal validation design | Trade-policy labeling (Approach A); globally chronological multi-symbol splits; boundary purging; horizon-justified embargo; locked final test | SEC-06,19 |
 | 9 | Baseline ML model training | Train approved candidates (LogReg + LightGBM); training-only fit; calibration on CALIBRATION; threshold tuning on validation; locked final-test isolation; safe model loading; selection layer evaluation against baselines | SEC-06,18,23 |
 | 10 | Calibration and selective decision logic | Probability calibration on designated splits; reliability diagrams; Murphy Brier decomposition; 5-state selective decision engine; sample-support & OOD abstention; no double cost subtraction; frozen decision policy; no final-test access | SEC-06,19,23 |
-| 11 | Historical evaluation harness | No leakage; predeclared comparators; pre-selected uncertainty method; unseen data; mode-safe | SEC-06,19 |
+| 11 | Independent risk engine | Complete independent authority; ML model cannot authorize or bypass; 11 deny-by-default controls; signed RiskAuthorization; admin RBAC & tamper-evident audit; entry vs exit distinction | SEC-01,06,08,09,19 |
 | 12 | Forward paper simulation | Same cost/model path as history; no live orders; mode isolation | SEC-19 |
 | 13 | Synthetic demo mode | Clearly labelled `SYNTHETIC DEMO`; cannot be reported as market evidence | SEC-06,19 |
 | 14 | Backend API & authentication | Authn on all private endpoints; server-side validation; least-privilege DB; sessions/cookies | SEC-01,05,06,08,10,12,15,16,17 |
