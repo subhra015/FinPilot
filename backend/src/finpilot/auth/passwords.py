@@ -141,7 +141,8 @@ def validate_password_policy(password: str, is_mfa_user: bool = False) -> None:
 
 
 _DUMMY_ARGON2_HASH = (
-    "$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQxMjM0NTY3OA$9Z5eS9QW4qV3r4j2X7t8Y1b2c3d4e5f6g7h8i9j0k1l"
+    "$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQxMjM0NTY3OA$"
+    "9Z5eS9QW4qV3r4j2X7t8Y1b2c3d4e5f6g7h8i9j0k1l"
 )
 
 

@@ -12,6 +12,7 @@ from collections.abc import Sequence
 from datetime import date
 from decimal import Decimal
 from typing import Any
+
 import numpy as np
 
 from finpilot.evaluation.models import UncertaintyInterval
@@ -60,7 +61,9 @@ def session_block_bootstrap(
     obs_return_pct = (obs_net_pnl / init_cap_float * 100.0) if init_cap_float > 0 else 0.0
     obs_expectancy = (obs_net_pnl / total_observed_trades) if total_observed_trades > 0 else 0.0
     obs_wins = sum(1 for t in all_observed_trades if Decimal(str(t["net_pnl"])) > Decimal("0.00"))
-    obs_win_rate_pct = (obs_wins / total_observed_trades * 100.0) if total_observed_trades > 0 else 0.0
+    obs_win_rate_pct = (
+        (obs_wins / total_observed_trades * 100.0) if total_observed_trades > 0 else 0.0
+    )
 
     if n_sessions == 0 or total_observed_trades == 0:
         empty_ci = UncertaintyInterval(
@@ -97,9 +100,7 @@ def session_block_bootstrap(
             rep_win_rate[b] = 0.0
             continue
 
-        b_pnl = float(
-            sum((Decimal(str(t["net_pnl"])) for t in sampled_trades), Decimal("0.00"))
-        )
+        b_pnl = float(sum((Decimal(str(t["net_pnl"])) for t in sampled_trades), Decimal("0.00")))
         b_ret = (b_pnl / init_cap_float * 100.0) if init_cap_float > 0 else 0.0
         b_exp = b_pnl / n_rep_trades
         b_wins = sum(1 for t in sampled_trades if Decimal(str(t["net_pnl"])) > Decimal("0.00"))

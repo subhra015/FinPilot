@@ -133,9 +133,7 @@ class SessionManager:
 
         # 4. Check idle timeout
         last_active = _to_utc(user_session.last_active_at)
-        idle_limit = last_active + timedelta(
-            seconds=user_session.idle_timeout_seconds
-        )
+        idle_limit = last_active + timedelta(seconds=user_session.idle_timeout_seconds)
         if now_utc > idle_limit:
             return None
 

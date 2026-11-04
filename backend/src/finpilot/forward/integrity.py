@@ -14,7 +14,6 @@ from pathlib import Path
 
 from finpilot.evaluation.models import EvaluationManifest
 from finpilot.forward.models import ModelIntegrityVerification
-from finpilot.ml.registry import ModelRegistry
 from finpilot.schemas.errors import DomainValidationError, ErrorCode
 
 DEFAULT_MODELS_DIR = Path("artifacts/models")
@@ -29,7 +28,8 @@ def verify_frozen_model_and_config(
     calibration_dir: Path | str = DEFAULT_CALIBRATION_DIR,
     manifest_path: Path | str = DEFAULT_MANIFEST_PATH,
 ) -> ModelIntegrityVerification:
-    """Verify cryptographic integrity of model artifact, feature schema, calibration, and risk rules.
+    """Verify cryptographic integrity of model artifact, feature schema, calibration,
+    and risk rules.
 
     Fails closed if the model file is altered, missing, or mismatched against the Layer 15 freeze.
     """

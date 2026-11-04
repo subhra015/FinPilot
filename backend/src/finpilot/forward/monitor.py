@@ -12,16 +12,18 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from finpilot.forward.models import DriftMonitorMetrics, PredictionEventRecord
+from finpilot.forward.models import DriftMonitorMetrics
 
 
 class DriftAndPerformanceMonitor:
     """Monitors live data latency, stale feeds, feature bounds, and calibration drift.
 
     Invariants:
-    1. Zero Silent Retraining: Drift alerts NEVER silently modify, retrain, or adjust model thresholds.
-    2. Safe No-New-Entry Mode: If data quality fails, latency exceeds threshold, or drawdown breaches
-       limits, trips a safe 'no-new-entry' switch while preserving existing protective exits.
+    1. Zero Silent Retraining: Drift alerts NEVER silently modify, retrain, or adjust
+       model thresholds.
+    2. Safe No-New-Entry Mode: If data quality fails, latency exceeds threshold, or drawdown
+       breaches limits, trips a safe 'no-new-entry' switch while preserving existing
+       protective exits.
     """
 
     def __init__(
@@ -34,10 +36,14 @@ class DriftAndPerformanceMonitor:
     ) -> None:
         self.max_acceptable_latency_seconds = max_acceptable_latency_seconds
         self.max_drawdown_threshold_pct = (
-            max_drawdown_pct_limit if max_drawdown_pct_limit is not None else max_drawdown_threshold_pct
+            max_drawdown_pct_limit
+            if max_drawdown_pct_limit is not None
+            else max_drawdown_threshold_pct
         )
         self.max_consecutive_stale_incidents = (
-            max_stale_incidents if max_stale_incidents is not None else max_consecutive_stale_incidents
+            max_stale_incidents
+            if max_stale_incidents is not None
+            else max_consecutive_stale_incidents
         )
 
         # Counters & State
@@ -77,7 +83,8 @@ class DriftAndPerformanceMonitor:
             self.stale_feed_incidents += 1
             if self.stale_feed_incidents >= self.max_consecutive_stale_incidents:
                 self._trip_safe_mode(
-                    f"Stale data feed threshold exceeded ({self.stale_feed_incidents} incidents; lag {latency:.1f}s > {self.max_acceptable_latency_seconds}s)"
+                    f"Stale data feed threshold exceeded ({self.stale_feed_incidents} incidents; "
+                    f"lag {latency:.1f}s > {self.max_acceptable_latency_seconds}s)"
                 )
             return False
 
@@ -86,7 +93,8 @@ class DriftAndPerformanceMonitor:
             self.abnormal_geometry_incidents += 1
             if self.abnormal_geometry_incidents >= 3:
                 self._trip_safe_mode(
-                    f"Multiple abnormal candle geometries detected ({self.abnormal_geometry_incidents} incidents)"
+                    "Multiple abnormal candle geometries detected "
+                    f"({self.abnormal_geometry_incidents} incidents)"
                 )
             return False
 
@@ -112,7 +120,8 @@ class DriftAndPerformanceMonitor:
         self.rolling_drawdown_pct = current_drawdown_pct
         if current_drawdown_pct >= self.max_drawdown_threshold_pct:
             self._trip_safe_mode(
-                f"Maximum drawdown threshold breached ({current_drawdown_pct:.2f}% >= {self.max_drawdown_threshold_pct:.2f}%)"
+                f"Maximum drawdown threshold breached ({current_drawdown_pct:.2f}% >= "
+                f"{self.max_drawdown_threshold_pct:.2f}%)"
             )
 
     def _trip_safe_mode(self, reason: str) -> None:

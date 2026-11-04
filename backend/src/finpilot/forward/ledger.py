@@ -9,7 +9,10 @@ Governed by:
 
 from __future__ import annotations
 
+import contextlib
 import json
+import logging
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -19,9 +22,33 @@ from finpilot.db.enums import DataMode, LedgerEventType
 from finpilot.forward.models import ForwardDecision, PredictionEventRecord
 from finpilot.ledger.models import LedgerEventPayload
 from finpilot.ledger.service import AuditLedgerService
-from finpilot.schemas.errors import DomainValidationError, ErrorCode
+from finpilot.schemas.errors import DomainValidationError, ErrorCode, sanitize_error_message
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_PREDICTION_LEDGER_PATH = Path("artifacts/forward/prediction_ledger.json")
+
+
+class LedgerIntegrityError(DomainValidationError):
+    """Raised when the prediction ledger cannot be loaded or its integrity is violated."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(
+            message=message,
+            field="ledger_path",
+            code=ErrorCode.VALIDATION_ERROR,
+        )
+
+
+class LedgerPersistenceError(DomainValidationError):
+    """Raised when the prediction ledger fails to atomically persist to disk."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(
+            message=message,
+            field="ledger_path",
+            code=ErrorCode.INTERNAL_ERROR,
+        )
 
 
 class ForwardPredictionLedger:
@@ -51,27 +78,62 @@ class ForwardPredictionLedger:
         self._load_from_disk()
 
     def _load_from_disk(self) -> None:
-        """Load records from disk on startup for recovery."""
-        if self.ledger_path.exists():
-            try:
-                with open(self.ledger_path, encoding="utf-8") as f:
-                    data = json.load(f)
-                for item in data:
-                    rec = PredictionEventRecord.model_validate(item)
-                    self._records[rec.event_id] = rec
-            except Exception:
-                pass
+        """Load records from disk on startup for recovery.
+
+        Fails closed with LedgerIntegrityError if the file exists but cannot be parsed,
+        ensuring corrupted or truncated persistence stores are never silently ignored.
+        """
+        if not self.ledger_path.exists():
+            return
+
+        try:
+            with open(self.ledger_path, encoding="utf-8") as f:
+                data = json.load(f)
+            if not isinstance(data, list):
+                raise DomainValidationError(
+                    "Invalid ledger format: expected top-level JSON array of prediction records",
+                    field="ledger_path",
+                    code=ErrorCode.VALIDATION_ERROR,
+                )
+            for item in data:
+                rec = PredictionEventRecord.model_validate(item)
+                self._records[rec.event_id] = rec
+        except Exception as exc:
+            safe_err = sanitize_error_message(str(exc))
+            logger.error(
+                "Prediction ledger loading failed for %s: %s",
+                self.ledger_path.name,
+                safe_err,
+            )
+            raise LedgerIntegrityError(
+                f"Ledger file integrity check failed at {self.ledger_path.name}: {safe_err}"
+            ) from exc
 
     def _save_to_disk(self) -> None:
-        """Persist current ledger records to disk atomically."""
+        """Persist current ledger records to disk atomically.
+
+        Propagates LedgerPersistenceError on disk failure while safely cleaning up
+        transient temporary files.
+        """
+        tmp_path = self.ledger_path.with_suffix(f".{uuid.uuid4().hex[:8]}.tmp")
         try:
             dumped = [rec.model_dump(mode="json") for rec in self._records.values()]
-            tmp_path = self.ledger_path.with_suffix(".tmp")
             with open(tmp_path, "w", encoding="utf-8") as f:
                 json.dump(dumped, f, indent=2, sort_keys=True)
             tmp_path.replace(self.ledger_path)
-        except Exception:
-            pass
+        except Exception as exc:
+            if tmp_path.exists():
+                with contextlib.suppress(OSError):
+                    tmp_path.unlink()
+            safe_err = sanitize_error_message(str(exc))
+            logger.error(
+                "Prediction ledger persistence failed for %s: %s",
+                self.ledger_path.name,
+                safe_err,
+            )
+            raise LedgerPersistenceError(
+                f"Failed to persist prediction ledger to {self.ledger_path.name}: {safe_err}"
+            ) from exc
 
     def record_prediction(self, record: PredictionEventRecord) -> PredictionEventRecord:
         """Record candidate prediction event BEFORE outcome is known (Idempotent)."""
@@ -117,7 +179,9 @@ class ForwardPredictionLedger:
                 features_snapshot=record.features_snapshot,
                 predicted_probability=record.raw_probability,
                 calibrated_probability=record.calibrated_probability,
-                estimated_expectancy=float(record.estimated_expectancy) if record.estimated_expectancy else None,
+                estimated_expectancy=float(record.estimated_expectancy)
+                if record.estimated_expectancy
+                else None,
                 risk_decision={
                     "is_authorized": record.risk_authorized,
                     "authorization_id": record.risk_authorization_id,
@@ -165,14 +229,26 @@ class ForwardPredictionLedger:
         prior = self._records[event_id]
         updated = prior.model_copy(
             update={
-                "paper_order_id": paper_order_id if paper_order_id is not None else prior.paper_order_id,
+                "paper_order_id": paper_order_id
+                if paper_order_id is not None
+                else prior.paper_order_id,
                 "fill_price": fill_price if fill_price is not None else prior.fill_price,
-                "fill_quantity": fill_quantity if fill_quantity is not None else prior.fill_quantity,
-                "fill_timestamp": fill_timestamp if fill_timestamp is not None else prior.fill_timestamp,
-                "slippage_incurred": slippage_incurred if slippage_incurred is not None else prior.slippage_incurred,
-                "charges_incurred": charges_incurred if charges_incurred is not None else prior.charges_incurred,
+                "fill_quantity": fill_quantity
+                if fill_quantity is not None
+                else prior.fill_quantity,
+                "fill_timestamp": fill_timestamp
+                if fill_timestamp is not None
+                else prior.fill_timestamp,
+                "slippage_incurred": slippage_incurred
+                if slippage_incurred is not None
+                else prior.slippage_incurred,
+                "charges_incurred": charges_incurred
+                if charges_incurred is not None
+                else prior.charges_incurred,
                 "exit_price": exit_price if exit_price is not None else prior.exit_price,
-                "exit_timestamp": exit_timestamp if exit_timestamp is not None else prior.exit_timestamp,
+                "exit_timestamp": exit_timestamp
+                if exit_timestamp is not None
+                else prior.exit_timestamp,
                 "exit_reason": exit_reason if exit_reason is not None else prior.exit_reason,
                 "gross_pnl": gross_pnl if gross_pnl is not None else prior.gross_pnl,
                 "net_pnl": net_pnl if net_pnl is not None else prior.net_pnl,
@@ -206,8 +282,12 @@ class ForwardPredictionLedger:
                 decision_state=prior.decision.value,
                 policy_version="TP-V1",
                 model_id=prior.model_id,
-                fill_details={"fill_price": str(fill_price), "quantity": fill_quantity} if fill_price else None,
-                exit_details={"exit_price": str(exit_price), "reason": exit_reason} if exit_price else None,
+                fill_details={"fill_price": str(fill_price), "quantity": fill_quantity}
+                if fill_price
+                else None,
+                exit_details={"exit_price": str(exit_price), "reason": exit_reason}
+                if exit_price
+                else None,
                 cost_breakdown={"fees": str(charges_incurred), "slippage": str(slippage_incurred)},
                 gross_pnl=gross_pnl,
                 net_pnl=net_pnl,

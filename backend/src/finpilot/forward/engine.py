@@ -9,30 +9,30 @@ Governed by:
 
 from __future__ import annotations
 
+import math
+import uuid
 from collections import defaultdict
 from collections.abc import Callable
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import UTC, datetime, time
 from decimal import Decimal
-import hashlib
 from pathlib import Path
-from typing import Any
-import uuid
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session as DBSession, sessionmaker
+from sqlalchemy.orm import Session as DBSession
+from sqlalchemy.orm import sessionmaker
 
 from finpilot.baselines.simple_strategy import PredeclaredSimpleStrategy
 from finpilot.data.adapters.base import BaseDataProviderAdapter
 from finpilot.data.adapters.synthetic import SyntheticDataProviderAdapter
 from finpilot.data.models import MarketDataRecord
 from finpilot.db.base import Base
-from finpilot.db.enums import DataMode, OrderSide, OrderStatus
+from finpilot.db.enums import DataMode
 from finpilot.db.models import Account, Instrument, Portfolio
 from finpilot.decision.engine import SelectiveDecisionEngine
 from finpilot.decision.models import DecisionState, FrozenDecisionPolicy
 from finpilot.execution.fee_schedule import NSEEquityIntradayFeeSchedule, round_paisa
-from finpilot.execution.models import AmbiguityTreatment, ExecutionOrder, FillEvent, PositionState
+from finpilot.execution.models import AmbiguityTreatment
 from finpilot.execution.portfolio import PortfolioManager
 from finpilot.execution.simulator import ExecutionSimulator
 from finpilot.features.definitions import FS_V1_VERSION
@@ -50,13 +50,10 @@ from finpilot.forward.models import (
     VirtualPortfolioConfig,
 )
 from finpilot.forward.monitor import DriftAndPerformanceMonitor
-from finpilot.ml.pipeline import MLSelectionPipeline
 from finpilot.ml.registry import ModelRegistry
 from finpilot.risk.evaluator import RiskEvaluator
 from finpilot.risk.models import RiskConfig, RiskDecisionStatus
 from finpilot.schemas.candles import CandleBar
-from finpilot.schemas.errors import DomainValidationError, ErrorCode
-from finpilot.schemas.trade_policy import TradeProposal
 
 IST = ZoneInfo("Asia/Kolkata")
 SESSION_OPEN_TIME = time(9, 15)
@@ -72,12 +69,17 @@ class ForwardPaperTradingEngine:
     """Authoritative forward paper trading engine with strict user trust and risk controls.
 
     Guarantees:
-    1. Zero Real-Money Execution: Forward paper orders are simulated only; live broker routes are absent.
+    1. Zero Real-Money Execution: Forward paper orders are simulated only;
+       live broker routes are absent.
     2. Frozen Model Verification: Rejects execution if model binary, policy, or risk rules drift.
-    3. User-Controlled Capital: Supports virtual portfolios (₹2k, ₹10k, ₹30k, ₹50k, custom) enforcing integer shares.
-    4. 10-Step Prediction Workflow: Persists predictions *before* market outcomes; appends outcomes separately.
-    5. Fail-Closed Stale Data: Halts new entries on stale feed (> 300s) while monitoring protective exits.
-    6. Double-Entry Accounting: Asserts Cash + Positions + Costs - Gross Realized == Initial Capital to ₹0.00.
+    3. User-Controlled Capital: Supports virtual portfolios (₹2k, ₹10k, ₹30k, ₹50k, custom)
+       enforcing integer shares.
+    4. 10-Step Prediction Workflow: Persists predictions *before* market outcomes;
+       appends outcomes separately.
+    5. Fail-Closed Stale Data: Halts new entries on stale feed (> 300s) while monitoring
+       protective exits.
+    6. Double-Entry Accounting: Asserts Cash + Positions + Costs - Gross Realized == Initial Capital
+       to ₹0.00.
     """
 
     def __init__(
@@ -187,8 +189,12 @@ class ForwardPaperTradingEngine:
         # 4. ML Selection Pipeline and Decision Engine
         model_registry = ModelRegistry()
         self.pipeline, _ = model_registry.load_model(self.model_id)
-        cal_path = Path("artifacts/calibration") / f"{self.calibration_policy_id}-{self.model_id}.json"
-        self.frozen_policy = FrozenDecisionPolicy.model_validate_json(cal_path.read_text(encoding="utf-8"))
+        cal_path = (
+            Path("artifacts/calibration") / f"{self.calibration_policy_id}-{self.model_id}.json"
+        )
+        self.frozen_policy = FrozenDecisionPolicy.model_validate_json(
+            cal_path.read_text(encoding="utf-8")
+        )
         self.decision_engine = SelectiveDecisionEngine(
             pipeline=self.pipeline,
             policy=self.frozen_policy,
@@ -227,24 +233,30 @@ class ForwardPaperTradingEngine:
 
     def validate_candle_geometry(self, bar: CandleBar | MarketDataRecord) -> bool:
         """Validate candle OHLC geometry and positive volume."""
-        op = float(bar.open)
-        hi = float(bar.high)
-        lo = float(bar.low)
-        cl = float(bar.close)
-        vol = int(bar.volume)
+        try:
+            op = float(bar.open)
+            hi = float(bar.high)
+            lo = float(bar.low)
+            cl = float(bar.close)
+            vol = float(bar.volume)
+        except (ValueError, TypeError):
+            return False
+
+        if math.isnan(op) or math.isnan(hi) or math.isnan(lo) or math.isnan(cl) or math.isnan(vol):
+            return False
+        if math.isinf(op) or math.isinf(hi) or math.isinf(lo) or math.isinf(cl) or math.isinf(vol):
+            return False
         if op <= 0 or hi <= 0 or lo <= 0 or cl <= 0:
             return False
         if not (lo <= op <= hi and lo <= cl <= hi):
             return False
-        if vol < 0:
-            return False
-        return True
+        return vol >= 0
 
     def process_completed_candle(
         self,
         bar: CandleBar | MarketDataRecord,
     ) -> PredictionEventRecord | None:
-        """Execute the authoritative 10-step prediction, risk, and execution workflow for a candle."""
+        """Execute authoritative 10-step prediction, risk, and execution workflow for a candle."""
         now_utc = self.get_current_time()
         c_ts = bar.timestamp if bar.timestamp.tzinfo else bar.timestamp.replace(tzinfo=UTC)
         symbol = bar.symbol
@@ -294,7 +306,9 @@ class ForwardPaperTradingEngine:
                         event_id=ev_id,
                         exit_price=exit_fill.fill_price,
                         exit_timestamp=exit_fill.timestamp,
-                        exit_reason=exit_reason.value if hasattr(exit_reason, "value") else str(exit_reason),
+                        exit_reason=exit_reason.value
+                        if hasattr(exit_reason, "value")
+                        else str(exit_reason),
                         gross_pnl=completed_t.gross_pnl,
                         net_pnl=completed_t.net_pnl,
                     )
@@ -334,12 +348,17 @@ class ForwardPaperTradingEngine:
                 risk_authorized=False,
                 risk_rejection_reasons=["ABNORMAL_CANDLE_GEOMETRY"],
                 decision=ForwardDecision.INSUFFICIENT_DATA,
-                decision_reason="Candle OHLC geometry violated boundary invariants (Low <= Open,Close <= High).",
+                decision_reason=(
+                    "Candle OHLC geometry violated boundary invariants (Low <= Open,Close <= High)."
+                ),
             )
             return self.prediction_ledger.record_prediction(rec)
 
         if not is_fresh or self.monitor.safe_no_new_entry_mode:
-            reason = self.monitor.safe_mode_trigger_reason or "Stale market feed; new entries blocked fail-closed."
+            reason = (
+                self.monitor.safe_mode_trigger_reason
+                or "Stale market feed; new entries blocked fail-closed."
+            )
             rec = PredictionEventRecord(
                 event_id=f"PRED-STALE-{symbol}-{int(c_ts.timestamp())}",
                 prediction_timestamp=now_utc,
@@ -393,7 +412,11 @@ class ForwardPaperTradingEngine:
             for p in self.portfolio_manager.positions.values()
             if p.status == "OPEN"
         )
-        total_eq = self.portfolio_manager.available_cash + self.portfolio_manager.reserved_cash + open_pos_val
+        total_eq = (
+            self.portfolio_manager.available_cash
+            + self.portfolio_manager.reserved_cash
+            + open_pos_val
+        )
 
         proposal = self.strategy.evaluate_candle(
             bar=bar,
@@ -423,7 +446,9 @@ class ForwardPaperTradingEngine:
                 risk_authorized=False,
                 risk_rejection_reasons=["STRATEGY_RULE_NOT_SATISFIED"],
                 decision=ForwardDecision.NO_TRADE,
-                decision_reason="Technical indicators did not meet STRAT-SIMPLE-V1 entry thresholds.",
+                decision_reason=(
+                    "Technical indicators did not meet STRAT-SIMPLE-V1 entry thresholds."
+                ),
             )
             return self.prediction_ledger.record_prediction(rec)
 
@@ -444,8 +469,9 @@ class ForwardPaperTradingEngine:
         if decision.decision_state == DecisionState.ACCEPTED_CANDIDATE:
             forward_decision = ForwardDecision.ACCEPTED
             decision_reason = (
-                f"Calibrated probability {cal_prob:.2f} >= threshold {self.verification.decision_threshold:.2f} "
-                f"with positive net expectancy ₹{exp_val}."
+                f"Calibrated probability {cal_prob:.2f} >= threshold "
+                f"{self.verification.decision_threshold:.2f} with "
+                f"positive net expectancy ₹{exp_val}."
             )
         elif decision.decision_state == DecisionState.INSUFFICIENT_EVIDENCE:
             forward_decision = ForwardDecision.INSUFFICIENT_EVIDENCE
@@ -456,8 +482,9 @@ class ForwardPaperTradingEngine:
         else:
             forward_decision = ForwardDecision.NO_TRADE
             decision_reason = (
-                f"Calibrated probability {cal_prob:.2f} below threshold {self.verification.decision_threshold:.2f} "
-                f"or non-positive expectancy (₹{exp_val})."
+                f"Calibrated probability {cal_prob:.2f} below threshold "
+                f"{self.verification.decision_threshold:.2f} or "
+                f"non-positive expectancy (₹{exp_val})."
             )
 
         # If model rejected or abstained, do not proceed to risk engine
@@ -504,14 +531,26 @@ class ForwardPaperTradingEngine:
             current_timestamp=c_ts,
         )
 
-        is_risk_auth = (risk_res.status == RiskDecisionStatus.AUTHORIZED) and (risk_res.authorization is not None)
-        rejection_reasons = [r.value for r in risk_res.rejection_reasons] if not is_risk_auth else []
-        auth_qty = risk_res.authorization.authorized_quantity if is_risk_auth and risk_res.authorization else 0
+        is_risk_auth = (risk_res.status == RiskDecisionStatus.AUTHORIZED) and (
+            risk_res.authorization is not None
+        )
+        rejection_reasons = (
+            [r.value for r in risk_res.rejection_reasons] if not is_risk_auth else []
+        )
+        auth_qty = (
+            risk_res.authorization.authorized_quantity
+            if is_risk_auth and risk_res.authorization
+            else 0
+        )
 
         # ==============================================================================
         # STEP 8: Record Decision in Prediction Ledger (BEFORE outcome occurs!)
         # ==============================================================================
-        final_decision = ForwardDecision.ACCEPTED if is_risk_auth and auth_qty > 0 else ForwardDecision.RISK_REJECTED
+        final_decision = (
+            ForwardDecision.ACCEPTED
+            if is_risk_auth and auth_qty > 0
+            else ForwardDecision.RISK_REJECTED
+        )
         final_reason = (
             decision_reason
             if is_risk_auth
@@ -537,7 +576,9 @@ class ForwardPaperTradingEngine:
             requested_quantity=proposal.quantity,
             authorized_quantity=auth_qty,
             risk_authorized=is_risk_auth,
-            risk_authorization_id=risk_res.authorization.authorization_id if is_risk_auth and risk_res.authorization else None,
+            risk_authorization_id=risk_res.authorization.authorization_id
+            if is_risk_auth and risk_res.authorization
+            else None,
             risk_rejection_reasons=rejection_reasons,
             decision=final_decision,
             decision_reason=final_reason,
@@ -573,8 +614,14 @@ class ForwardPaperTradingEngine:
             for p in self.portfolio_manager.positions.values()
             if p.status == "OPEN"
         )
-        tot_eq = self.portfolio_manager.available_cash + self.portfolio_manager.reserved_cash + open_pos_val
-        realized_pnl = sum((t.net_pnl for t in self.portfolio_manager.completed_trades), Decimal("0.00"))
+        tot_eq = (
+            self.portfolio_manager.available_cash
+            + self.portfolio_manager.reserved_cash
+            + open_pos_val
+        )
+        realized_pnl = sum(
+            (t.net_pnl for t in self.portfolio_manager.completed_trades), Decimal("0.00")
+        )
         all_recs = self.prediction_ledger.get_all_records()
         last_c = all_recs[-1].candle_timestamp if all_recs else None
 
@@ -584,7 +631,9 @@ class ForwardPaperTradingEngine:
             current_equity=round_paisa(tot_eq),
             available_cash=round_paisa(self.portfolio_manager.available_cash),
             reserved_cash=round_paisa(self.portfolio_manager.reserved_cash),
-            open_positions_count=sum(1 for p in self.portfolio_manager.positions.values() if p.status == "OPEN"),
+            open_positions_count=sum(
+                1 for p in self.portfolio_manager.positions.values() if p.status == "OPEN"
+            ),
             active_orders_count=len(self.portfolio_manager.open_orders),
             total_predictions_recorded=len(all_recs),
             total_trades_completed=len(self.portfolio_manager.completed_trades),
@@ -608,13 +657,25 @@ class ForwardPaperTradingEngine:
         fees = sum((t.total_costs for t in completed), Decimal("0.00"))
         net_pnl = sum((t.net_pnl for t in completed), Decimal("0.00"))
         ending_eq = self.initial_capital + net_pnl
-        net_ret = float(net_pnl / self.initial_capital * Decimal("100.0")) if self.initial_capital > 0 else 0.0
+        net_ret = (
+            float(net_pnl / self.initial_capital * Decimal("100.0"))
+            if self.initial_capital > 0
+            else 0.0
+        )
         exp = round_paisa(net_pnl / Decimal(n_trades)) if n_trades > 0 else Decimal("0.00")
         wr = round(wins / n_trades * 100.0, 2) if n_trades > 0 else 0.0
 
-        gains = sum((t.gross_pnl for t in completed if t.gross_pnl > Decimal("0.00")), Decimal("0.00"))
-        loss_sum = abs(sum((t.gross_pnl for t in completed if t.gross_pnl < Decimal("0.00")), Decimal("0.00")))
-        pf = float(gains / loss_sum) if loss_sum > Decimal("0.00") else (1.0 if n_trades == 0 else 999.99)
+        gains = sum(
+            (t.gross_pnl for t in completed if t.gross_pnl > Decimal("0.00")), Decimal("0.00")
+        )
+        loss_sum = abs(
+            sum((t.gross_pnl for t in completed if t.gross_pnl < Decimal("0.00")), Decimal("0.00"))
+        )
+        pf = (
+            float(gains / loss_sum)
+            if loss_sum > Decimal("0.00")
+            else (1.0 if n_trades == 0 else 999.99)
+        )
 
         # Drawdown and streaks
         streak = 0

@@ -24,7 +24,8 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session as DBSession, sessionmaker
+from sqlalchemy.orm import Session as DBSession
+from sqlalchemy.orm import sessionmaker
 
 from finpilot.data.models import MarketDataRecord
 from finpilot.db.base import Base
@@ -36,9 +37,12 @@ from finpilot.execution.models import AmbiguityTreatment, ExecutionOrder, FillEv
 from finpilot.execution.simulator import ExecutionSimulator
 from finpilot.ledger import AuditLedgerService, LedgerEventPayload
 from finpilot.risk.evaluator import RiskEvaluator
-from finpilot.risk.models import RiskAuthorization, RiskConfig, RiskDecisionStatus, RiskEvaluationResult
+from finpilot.risk.models import (
+    RiskConfig,
+    RiskDecisionStatus,
+    RiskEvaluationResult,
+)
 from finpilot.schemas.candles import CandleBar
-from finpilot.schemas.errors import DomainValidationError, ErrorCode
 from finpilot.schemas.trade_policy import TradeProposal
 
 from .audit_logger import audit_logger
@@ -112,7 +116,9 @@ class EndToEndPaperWorkflow:
             max_concurrent_positions=1,
             approved_instruments=["TCS", "INFY", "RELIANCE"],
         )
-        self.risk_evaluator = RiskEvaluator(config=resolved_risk_config, fee_schedule=self.fee_schedule)
+        self.risk_evaluator = RiskEvaluator(
+            config=resolved_risk_config, fee_schedule=self.fee_schedule
+        )
         self.simulator = ExecutionSimulator(
             fee_schedule=self.fee_schedule,
             ambiguity_treatment=AmbiguityTreatment.CONSERVATIVE_STOP_FIRST,
@@ -202,12 +208,17 @@ class EndToEndPaperWorkflow:
         candle: CandleBar | MarketDataRecord,
         current_time: datetime | None = None,
     ) -> bool:
-        """Verify market data candle is not stale or retroactively out-of-order (fail-closed check)."""
-        candle_ts = candle.timestamp if candle.timestamp.tzinfo else candle.timestamp.replace(tzinfo=UTC)
+        """Verify market data candle is not stale or retroactively out-of-order
+        (fail-closed check).
+        """
+        candle_ts = (
+            candle.timestamp if candle.timestamp.tzinfo else candle.timestamp.replace(tzinfo=UTC)
+        )
         symbol = candle.symbol
 
         if self.mode == DataMode.HISTORICAL_REPLAY:
-            # Monotonic ordering check: Candle cannot arrive out-of-order before previously processed candle
+            # Monotonic ordering check: Candle cannot arrive out-of-order before previously
+            # processed candle
             if symbol in self.last_candle_timestamp:
                 prev_ts = self.last_candle_timestamp[symbol]
                 if candle_ts < prev_ts:
@@ -260,7 +271,10 @@ class EndToEndPaperWorkflow:
                 )
                 return False
 
-            if symbol in self.last_candle_timestamp and candle_ts < self.last_candle_timestamp[symbol]:
+            if (
+                symbol in self.last_candle_timestamp
+                and candle_ts < self.last_candle_timestamp[symbol]
+            ):
                 return False
 
             self.last_candle_timestamp[symbol] = candle_ts
@@ -271,7 +285,9 @@ class EndToEndPaperWorkflow:
         candidate: CandidateSignal,
         is_fresh: bool = True,
     ) -> WorkflowExecutionOutcome:
-        """Process a single trade proposal through the end-to-end pipeline with duplicate protection."""
+        """Process a single trade proposal through the end-to-end pipeline with
+        duplicate protection.
+        """
         # Forward paper mode barrier check
         if self.mode == DataMode.FORWARD_PAPER:
             # Explicit assertion: Forward paper CANNOT connect to live broker
@@ -307,7 +323,9 @@ class EndToEndPaperWorkflow:
                 proposal_id=f"PROP-{uuid.uuid4().hex[:8]}",
                 decision_state=DecisionState.NO_TRADE.value,
                 is_risk_approved=False,
-                rejection_reasons=["Calibrated probability below threshold or non-positive expectancy"],
+                rejection_reasons=[
+                    "Calibrated probability below threshold or non-positive expectancy"
+                ],
                 mode=self.mode.value,
             )
             self._record_outcome(event_key, outcome)
@@ -412,7 +430,9 @@ class EndToEndPaperWorkflow:
         if fill:
             updated_order = order.model_copy(
                 update={
-                    "status": OrderStatus.FILLED if fill.fill_quantity == order.quantity else OrderStatus.PARTIAL,
+                    "status": OrderStatus.FILLED
+                    if fill.fill_quantity == order.quantity
+                    else OrderStatus.PARTIAL,
                     "filled_quantity": fill.fill_quantity,
                 }
             )
@@ -531,7 +551,9 @@ class EndToEndPaperWorkflow:
         self,
         bar: CandleBar | MarketDataRecord,
     ) -> FillEvent | None:
-        """Evaluate open position against current bar for exits (stops, targets, session cutoffs)."""
+        """Evaluate open position against current bar for exits
+        (stops, targets, session cutoffs).
+        """
         pos = self.active_positions.get(bar.symbol if hasattr(bar, "symbol") else "TCS")
         if not pos or pos.status != "OPEN":
             return None
@@ -541,7 +563,9 @@ class EndToEndPaperWorkflow:
             gross_pnl = (exit_fill.fill_price - pos.average_entry_price) * pos.quantity
             net_pnl = gross_pnl - exit_fill.cost_breakdown.total_costs
             self.realized_pnl += net_pnl
-            self.available_cash += (exit_fill.fill_price * pos.quantity) - exit_fill.cost_breakdown.total_costs
+            self.available_cash += (
+                exit_fill.fill_price * pos.quantity
+            ) - exit_fill.cost_breakdown.total_costs
 
             # Record Ledger Exit
             ledger_payload = LedgerEventPayload(
@@ -579,7 +603,9 @@ class EndToEndPaperWorkflow:
     def mark_position_unresolved(
         self, symbol: str, bar: CandleBar | MarketDataRecord
     ) -> PositionState:
-        """Mark an open position as UNRESOLVED when session closes or feed halts without executable exit."""
+        """Mark an open position as UNRESOLVED when session closes or feed halts
+        without executable exit.
+        """
         pos = self.active_positions.get(symbol)
         if not pos or pos.status != "OPEN":
             raise ValueError(f"No open position found for symbol {symbol}")
@@ -657,7 +683,9 @@ class EndToEndPaperWorkflow:
                 details={"error": "Ledger replay validation failed on recovery"},
                 severity="CRITICAL",
             )
-            raise RuntimeError(f"Tamper detected during crash recovery: {replay_result.tamper_details}")
+            raise RuntimeError(
+                f"Tamper detected during crash recovery: {replay_result.tamper_details}"
+            )
 
         # Sync state
         self.available_cash = replay_result.reconstructed_cash

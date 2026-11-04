@@ -30,7 +30,11 @@ from finpilot.db.models import Account, Instrument, Portfolio, User
 from finpilot.execution.models import AmbiguityTreatment, ExecutionOrder, FillEvent
 from finpilot.forward.engine import ForwardPaperTradingEngine
 from finpilot.forward.integrity import verify_frozen_model_and_config
-from finpilot.forward.ledger import ForwardPredictionLedger
+from finpilot.forward.ledger import (
+    ForwardPredictionLedger,
+    LedgerIntegrityError,
+    LedgerPersistenceError,
+)
 from finpilot.forward.models import (
     DriftMonitorMetrics,
     ForwardDecision,
@@ -382,3 +386,56 @@ def test_forward_paper_api_endpoints_auth_required():
         json={"initial_capital": "30000.00", "tier": "TIER_30K", "max_open_positions": 1},
     )
     assert resp.status_code == 401
+
+
+# ==============================================================================
+# TEST 10: Corrupted Prediction Ledger Recovery Fails Closed
+# ==============================================================================
+def test_corrupted_ledger_recovery_fails_closed(tmp_path):
+    """Corrupted persisted ledger must fail closed with LedgerIntegrityError."""
+    corrupted_file = tmp_path / "corrupted_ledger.json"
+    corrupted_file.write_text("{this is not valid JSON!}", encoding="utf-8")
+
+    with pytest.raises(LedgerIntegrityError) as exc_info:
+        ForwardPredictionLedger(storage_path=corrupted_file)
+
+    assert "integrity check failed" in str(exc_info.value).lower()
+
+
+# ==============================================================================
+# TEST 11: Prediction Ledger Disk Write Failure Propagates and Cleans Up
+# ==============================================================================
+def test_ledger_disk_write_failure_propagates_and_cleans_up(tmp_path):
+    """Disk write failure during _save_to_disk must propagate and remove temp files."""
+    ledger_file = tmp_path / "test_ledger_save_fail.json"
+    ledger = ForwardPredictionLedger(storage_path=ledger_file)
+
+    now = datetime.now(UTC)
+    pred_rec = PredictionEventRecord(
+        event_id="PRED-FAIL-01",
+        prediction_timestamp=now,
+        candle_timestamp=now,
+        symbol="TCS",
+        instrument_id=1,
+        model_id="MODEL-LOGREG-V1",
+        model_hash="ede1e29783917673f44b68e72e62f446b96972feb741627539f52c2a2c455bfb",
+        proposed_entry_price=Decimal("3800.00"),
+        stop_loss_price=Decimal("3750.00"),
+        profit_target_price=Decimal("3900.00"),
+        requested_quantity=5,
+        risk_authorized=True,
+        decision=ForwardDecision.ACCEPTED,
+        decision_reason="Candidate signal",
+    )
+    ledger._records[pred_rec.event_id] = pred_rec
+
+    with (
+        patch("json.dump", side_effect=OSError("Simulated I/O disk failure")),
+        pytest.raises(LedgerPersistenceError) as exc_info,
+    ):
+        ledger._save_to_disk()
+
+    assert "failed to persist" in str(exc_info.value).lower()
+    # Ensure temporary file was cleanly unlinked
+    temp_files = list(tmp_path.glob("*.tmp"))
+    assert len(temp_files) == 0, f"Expected no leftover .tmp files, found: {temp_files}"

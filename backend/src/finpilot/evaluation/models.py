@@ -9,7 +9,7 @@ Governed by:
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
 from typing import Any
@@ -149,7 +149,7 @@ class BrierDecomposition(BaseModel):
 
     brier_score: float
     reliability: float  # Pure calibration component (lower is better, 0 is perfect)
-    resolution: float   # Discrimination component (higher is better)
+    resolution: float  # Discrimination component (higher is better)
     uncertainty: float  # Base rate entropy component: o_bar * (1 - o_bar)
     log_loss: float
     identity_holds: bool = True

@@ -35,11 +35,11 @@ class ForwardDecision(StrEnum):
 class VirtualCapitalTier(StrEnum):
     """Supported virtual starting capital tiers for forward paper evaluation."""
 
-    TIER_2K = "TIER_2K"       # ₹2,000 (Micro / Integer-share constraint demonstrator)
-    TIER_10K = "TIER_10K"     # ₹10,000 (Small)
-    TIER_30K = "TIER_30K"     # ₹30,000 (Baseline evaluation)
-    TIER_50K = "TIER_50K"     # ₹50,000 (Standard intraday)
-    CUSTOM = "CUSTOM"         # User-specified cash
+    TIER_2K = "TIER_2K"  # ₹2,000 (Micro / Integer-share constraint demonstrator)
+    TIER_10K = "TIER_10K"  # ₹10,000 (Small)
+    TIER_30K = "TIER_30K"  # ₹30,000 (Baseline evaluation)
+    TIER_50K = "TIER_50K"  # ₹50,000 (Standard intraday)
+    CUSTOM = "CUSTOM"  # User-specified cash
 
 
 class VirtualPortfolioConfig(BaseModel):
@@ -48,15 +48,18 @@ class VirtualPortfolioConfig(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     tier: VirtualCapitalTier = VirtualCapitalTier.TIER_30K
-    initial_capital: Decimal = Field(..., gt=Decimal("0.00"), description="Virtual starting cash in INR")
+    initial_capital: Decimal = Field(
+        ..., gt=Decimal("0.00"), description="Virtual starting cash in INR"
+    )
     max_open_positions: int = Field(default=1, ge=1, le=5)
     portfolio_name: str = "Forward Paper Portfolio"
     mode: DataMode = Field(default=DataMode.FORWARD_PAPER)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     notes: str = Field(
         default=(
-            "₹30,000 is a demonstration baseline only, not a mandatory minimum or investment advice. "
-            "Server-authoritative risk and integer-share affordability are enforced regardless of portfolio size."
+            "₹30,000 is a demonstration baseline only, not a mandatory minimum or "
+            "investment advice. Server-authoritative risk and integer-share affordability "
+            "are enforced regardless of portfolio size."
         )
     )
 
