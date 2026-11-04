@@ -1,0 +1,69 @@
+{
+  "manifest_id": "EVAL-MANIFEST-LOCKED-MODEL-LOGREG-V1-202601",
+  "created_at": "2026-11-04T17:25:57.400996Z",
+  "git_commit": "HEAD",
+  "dataset_manifest": {
+    "dataset_name": "NSE_EQUITY_INTRADAY_5M_SYNTHETIC_CLEAN",
+    "dataset_hash": "91cbec8c7f84289ebbcc11ddcf58b54175ff500ff9c3b4e24a37035b024384ac",
+    "publisher": "FinPilot Synthetic & NSE Bhavcopy Adapter Framework",
+    "license_status": "FinPilot Synthetic / Research Open Evaluation License",
+    "permitted_uses": [
+      "HISTORICAL_REPLAY",
+      "OFFLINE_VALIDATION",
+      "ALGORITHMIC_BENCHMARKING"
+    ],
+    "total_bars": 6750,
+    "start_date": "2026-01-01",
+    "end_date": "2026-01-30",
+    "universe": [
+      "INFY",
+      "RELIANCE",
+      "TCS"
+    ]
+  },
+  "split_manifest_id": "SPLIT-TP-V1-91cbec8c-73dcba",
+  "locked_final_test_hash": "8c02ffda1a534713de5d3ae0d29d2bac5461768bbdff51723e3ef30702aafab1",
+  "model_freeze": {
+    "model_id": "MODEL-LOGREG-V1",
+    "artifact_checksum": "ede1e29783917673f44b68e72e62f446b96972feb741627539f52c2a2c455bfb",
+    "model_family": "LOGISTIC_REGRESSION",
+    "feature_schema_version": "FS-V1",
+    "feature_names": [
+      "ret_1",
+      "sma_ratio_9_21",
+      "rsi_14",
+      "causal_rel_vol"
+    ],
+    "hyperparameters": {
+      "C": 1.0,
+      "penalty": "l2",
+      "random_state": 42,
+      "solver": "lbfgs"
+    },
+    "calibration_policy_id": "DECISION-POLICY-V1",
+    "calibration_policy_hash": "7b2f674b13ea73052d1e39eb3038228268d13ddf04eb25f9a51eb6b692cbd3bb",
+    "decision_threshold": 0.54,
+    "git_commit": "HEAD"
+  },
+  "cost_schedule": {
+    "schedule_name": "NSE_EQUITY_INTRADAY_V1",
+    "brokerage_rate": 0.0003,
+    "stt_rate": 0.00025,
+    "exchange_txn_rate": 0.0000297,
+    "sebi_rate": 1e-6,
+    "stamp_duty_rate": 0.00003,
+    "gst_rate": 0.18,
+    "default_slippage_bps": 2.0
+  },
+  "simulator_version": "SIMULATOR-V1-NSE-CONSERVATIVE",
+  "virtual_capital_tiers": [
+    "2000.00",
+    "10000.00",
+    "30000.00",
+    "50000.00",
+    "100000.00"
+  ],
+  "evaluation_period_start": "2026-01-27",
+  "evaluation_period_end": "2026-01-30",
+  "manifest_sha256": "8ea4ad404428c68a8dcca4433f5b190fdbe20e8ec17452a772d7974bff37095d"
+}

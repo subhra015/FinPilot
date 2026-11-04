@@ -15,7 +15,7 @@ service-account*.json
 # ---- Python ----------------------------------------------------------------
 __pycache__/
 *.py[cod]
-*$py.class
+*.class
 *.egg-info/
 .eggs/
 build/
@@ -55,9 +55,25 @@ yarn-error.log*
 finpilot_dev.db
 
 # ---- Data / model artefacts ------------------------------------------------
-data/
-models/
-artifacts/
+/data/*
+!/data/splits/
+/data/splits/*
+!/data/splits/SPLIT-MANIFEST-V1.json
+
+/models/
+
+/artifacts/*
+!/artifacts/evaluation/
+/artifacts/evaluation/*
+!/artifacts/evaluation/EVALUATION_MANIFEST_LOCKED_TEST.json
+!/artifacts/evaluation/locked_historical_evaluation_report.json
+
+!/artifacts/forward_paper/
+/artifacts/forward_paper/*
+!/artifacts/forward_paper/FORWARD_PAPER_MANIFEST.json
+!/artifacts/forward_paper/forward_paper_report.json
+!/artifacts/forward_paper/prediction_ledger_summary.json
+
 *.parquet
 *.arrow
 *.feather

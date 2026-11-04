@@ -1,0 +1,505 @@
+{
+  "manifest": {
+    "manifest_id": "EVAL-MANIFEST-LOCKED-MODEL-LOGREG-V1-202601",
+    "created_at": "2026-11-04T17:25:57.400996Z",
+    "git_commit": "HEAD",
+    "dataset_manifest": {
+      "dataset_name": "NSE_EQUITY_INTRADAY_5M_SYNTHETIC_CLEAN",
+      "dataset_hash": "91cbec8c7f84289ebbcc11ddcf58b54175ff500ff9c3b4e24a37035b024384ac",
+      "publisher": "FinPilot Synthetic & NSE Bhavcopy Adapter Framework",
+      "license_status": "FinPilot Synthetic / Research Open Evaluation License",
+      "permitted_uses": [
+        "HISTORICAL_REPLAY",
+        "OFFLINE_VALIDATION",
+        "ALGORITHMIC_BENCHMARKING"
+      ],
+      "total_bars": 6750,
+      "start_date": "2026-01-01",
+      "end_date": "2026-01-30",
+      "universe": [
+        "INFY",
+        "RELIANCE",
+        "TCS"
+      ]
+    },
+    "split_manifest_id": "SPLIT-TP-V1-91cbec8c-73dcba",
+    "locked_final_test_hash": "8c02ffda1a534713de5d3ae0d29d2bac5461768bbdff51723e3ef30702aafab1",
+    "model_freeze": {
+      "model_id": "MODEL-LOGREG-V1",
+      "artifact_checksum": "ede1e29783917673f44b68e72e62f446b96972feb741627539f52c2a2c455bfb",
+      "model_family": "LOGISTIC_REGRESSION",
+      "feature_schema_version": "FS-V1",
+      "feature_names": [
+        "ret_1",
+        "sma_ratio_9_21",
+        "rsi_14",
+        "causal_rel_vol"
+      ],
+      "hyperparameters": {
+        "C": 1.0,
+        "penalty": "l2",
+        "random_state": 42,
+        "solver": "lbfgs"
+      },
+      "calibration_policy_id": "DECISION-POLICY-V1",
+      "calibration_policy_hash": "7b2f674b13ea73052d1e39eb3038228268d13ddf04eb25f9a51eb6b692cbd3bb",
+      "decision_threshold": 0.54,
+      "git_commit": "HEAD"
+    },
+    "cost_schedule": {
+      "schedule_name": "NSE_EQUITY_INTRADAY_V1",
+      "brokerage_rate": 0.0003,
+      "stt_rate": 0.00025,
+      "exchange_txn_rate": 0.0000297,
+      "sebi_rate": 1e-6,
+      "stamp_duty_rate": 0.00003,
+      "gst_rate": 0.18,
+      "default_slippage_bps": 2.0
+    },
+    "simulator_version": "SIMULATOR-V1-NSE-CONSERVATIVE",
+    "virtual_capital_tiers": [
+      "2000.00",
+      "10000.00",
+      "30000.00",
+      "50000.00",
+      "100000.00"
+    ],
+    "evaluation_period_start": "2026-01-27",
+    "evaluation_period_end": "2026-01-30",
+    "manifest_sha256": "8ea4ad404428c68a8dcca4433f5b190fdbe20e8ec17452a772d7974bff37095d"
+  },
+  "arm_a_no_trade": {
+    "arm_id": "ARM-A",
+    "arm_name": "Cash / No-Trade Reference",
+    "initial_capital": "30000.00",
+    "ending_equity": "30000.00",
+    "gross_pnl": "0.00",
+    "total_fees": "0.00",
+    "net_pnl": "0.00",
+    "net_return_pct": 0.0,
+    "net_expectancy_per_trade": "0.00",
+    "profit_factor": 1.0,
+    "profit_factor_formula": "Sum(Gains) / Abs(Sum(Losses))",
+    "win_rate_pct": 0.0,
+    "total_trades": 0,
+    "winning_trades": 0,
+    "losing_trades": 0,
+    "scratch_trades": 0,
+    "max_drawdown_pct": 0.0,
+    "worst_trading_day": "0.00",
+    "losing_streak": 0,
+    "monthly_returns": {
+      "2026-01": 0.0
+    },
+    "capital_utilization_pct": 0.0,
+    "signals_evaluated": 0,
+    "signals_accepted": 0,
+    "coverage_rate": 0.0,
+    "fee_breakdown": {
+      "brokerage": "0.00",
+      "stt": "0.00",
+      "exchange_txn_charges": "0.00",
+      "sebi_turnover_charges": "0.00",
+      "stamp_duty": "0.00",
+      "gst": "0.00",
+      "total_statutory_fees": "0.00"
+    },
+    "brier_decomposition": null,
+    "bootstrap_ci_net_pnl": {
+      "point_estimate": 0.0,
+      "ci_lower_95": 0.0,
+      "ci_upper_95": 0.0,
+      "std_err": 0.0,
+      "method": "date_clustered_block_bootstrap_b1000"
+    },
+    "bootstrap_ci_expectancy": {
+      "point_estimate": 0.0,
+      "ci_lower_95": 0.0,
+      "ci_upper_95": 0.0,
+      "std_err": 0.0,
+      "method": "date_clustered_block_bootstrap_b1000"
+    },
+    "bootstrap_ci_win_rate": {
+      "point_estimate": 0.0,
+      "ci_lower_95": 0.0,
+      "ci_upper_95": 0.0,
+      "std_err": 0.0,
+      "method": "date_clustered_block_bootstrap_b1000"
+    },
+    "slippage_sensitivity": []
+  },
+  "arm_b_simple_baseline": {
+    "arm_id": "ARM-B",
+    "arm_name": "Predeclared Simple Strategy (STRAT-SIMPLE-V1)",
+    "initial_capital": "30000.00",
+    "ending_equity": "29567.67",
+    "gross_pnl": "-376.08",
+    "total_fees": "56.25",
+    "net_pnl": "-432.33",
+    "net_return_pct": -1.4411,
+    "net_expectancy_per_trade": "-144.11",
+    "profit_factor": 0.0,
+    "profit_factor_formula": "Sum(Gains) / Abs(Sum(Losses))",
+    "win_rate_pct": 0.0,
+    "total_trades": 3,
+    "winning_trades": 0,
+    "losing_trades": 3,
+    "scratch_trades": 0,
+    "max_drawdown_pct": 1.44,
+    "worst_trading_day": "-243.87",
+    "losing_streak": 3,
+    "monthly_returns": {
+      "2026-01": -1.44
+    },
+    "capital_utilization_pct": 1.44,
+    "signals_evaluated": 4,
+    "signals_accepted": 4,
+    "coverage_rate": 100.0,
+    "fee_breakdown": {
+      "brokerage": "23.13",
+      "stt": "9.60",
+      "exchange_txn_charges": "2.29",
+      "sebi_turnover_charges": "0.08",
+      "stamp_duty": "1.16",
+      "gst": "4.59",
+      "total_statutory_fees": "40.85"
+    },
+    "brier_decomposition": null,
+    "bootstrap_ci_net_pnl": {
+      "point_estimate": -432.33,
+      "ci_lower_95": -487.74,
+      "ci_upper_95": -376.92,
+      "std_err": 39.4347,
+      "method": "date_clustered_block_bootstrap_b1000"
+    },
+    "bootstrap_ci_expectancy": {
+      "point_estimate": -144.11,
+      "ci_lower_95": -243.87,
+      "ci_upper_95": -94.23,
+      "std_err": 54.7242,
+      "method": "date_clustered_block_bootstrap_b1000"
+    },
+    "bootstrap_ci_win_rate": {
+      "point_estimate": 0.0,
+      "ci_lower_95": 0.0,
+      "ci_upper_95": 0.0,
+      "std_err": 0.0,
+      "method": "date_clustered_block_bootstrap_b1000"
+    },
+    "slippage_sensitivity": []
+  },
+  "arm_c_ml_selected": {
+    "arm_id": "ARM-C",
+    "arm_name": "Simple Strategy + Calibrated MODEL-LOGREG-V1",
+    "initial_capital": "30000.00",
+    "ending_equity": "29733.67",
+    "gross_pnl": "-228.38",
+    "total_fees": "37.95",
+    "net_pnl": "-266.33",
+    "net_return_pct": -0.8878,
+    "net_expectancy_per_trade": "-133.17",
+    "profit_factor": 0.0,
+    "profit_factor_formula": "Sum(Gains) / Abs(Sum(Losses))",
+    "win_rate_pct": 0.0,
+    "total_trades": 2,
+    "winning_trades": 0,
+    "losing_trades": 2,
+    "scratch_trades": 0,
+    "max_drawdown_pct": 0.89,
+    "worst_trading_day": "-243.87",
+    "losing_streak": 2,
+    "monthly_returns": {
+      "2026-01": -0.89
+    },
+    "capital_utilization_pct": 0.89,
+    "signals_evaluated": 4,
+    "signals_accepted": 3,
+    "coverage_rate": 75.0,
+    "fee_breakdown": {
+      "brokerage": "15.60",
+      "stt": "6.48",
+      "exchange_txn_charges": "1.54",
+      "sebi_turnover_charges": "0.05",
+      "stamp_duty": "0.78",
+      "gst": "3.09",
+      "total_statutory_fees": "27.54"
+    },
+    "brier_decomposition": {
+      "brier_score": 0.053047,
+      "reliability": 0.022242,
+      "resolution": 0.195143,
+      "uncertainty": 0.225543,
+      "log_loss": 0.326141,
+      "identity_holds": true,
+      "explanation": "Brier score = Reliability - Resolution + Uncertainty. Brier score is not a pure calibration measure because it conflates calibration (reliability) with discrimination (resolution) and irreducible problem uncertainty."
+    },
+    "bootstrap_ci_net_pnl": {
+      "point_estimate": -266.33,
+      "ci_lower_95": -487.74,
+      "ci_upper_95": -44.92,
+      "std_err": 157.5753,
+      "method": "date_clustered_block_bootstrap_b1000"
+    },
+    "bootstrap_ci_expectancy": {
+      "point_estimate": -133.165,
+      "ci_lower_95": -243.87,
+      "ci_upper_95": -22.46,
+      "std_err": 78.7876,
+      "method": "date_clustered_block_bootstrap_b1000"
+    },
+    "bootstrap_ci_win_rate": {
+      "point_estimate": 0.0,
+      "ci_lower_95": 0.0,
+      "ci_upper_95": 0.0,
+      "std_err": 0.0,
+      "method": "date_clustered_block_bootstrap_b1000"
+    },
+    "slippage_sensitivity": [
+      {
+        "slippage_bps": 0.0,
+        "gross_pnl": "-220.91",
+        "fees": "27.54",
+        "net_pnl": "-248.45",
+        "expectancy": "-124.23",
+        "profit_factor": 0.0
+      },
+      {
+        "slippage_bps": 2.0,
+        "gross_pnl": "-228.38",
+        "fees": "37.95",
+        "net_pnl": "-266.33",
+        "expectancy": "-133.17",
+        "profit_factor": 0.0
+      },
+      {
+        "slippage_bps": 5.0,
+        "gross_pnl": "-239.69",
+        "fees": "53.56",
+        "net_pnl": "-293.25",
+        "expectancy": "-146.63",
+        "profit_factor": 0.0
+      },
+      {
+        "slippage_bps": 10.0,
+        "gross_pnl": "-258.44",
+        "fees": "79.57",
+        "net_pnl": "-338.01",
+        "expectancy": "-169.01",
+        "profit_factor": 0.0
+      }
+    ]
+  },
+  "incremental_contribution": {
+    "delta_net_pnl_inr": "166.00",
+    "delta_win_rate_pct": 0.0,
+    "fee_savings_inr": "18.30",
+    "trades_filtered_or_avoided": 1,
+    "max_drawdown_reduction_pct": 0.55
+  },
+  "capital_scenarios": [
+    {
+      "capital": "2000.00",
+      "affordable_trades": 0,
+      "capital_rejected_trades": 0,
+      "net_pnl": "0.00",
+      "net_return_pct": 0.0,
+      "max_drawdown_pct": 0.0,
+      "hurdle_band_met": false,
+      "notes": "High-priced shares (e.g. TCS at ~₹3,800) exceed total account cash; proposals fail integer-share affordability (0 shares authorized)."
+    },
+    {
+      "capital": "10000.00",
+      "affordable_trades": 2,
+      "capital_rejected_trades": 0,
+      "net_pnl": "-88.76",
+      "net_return_pct": -0.8876,
+      "max_drawdown_pct": 0.89,
+      "hurdle_band_met": false,
+      "notes": "Affordable for mid-priced shares (INFY, RELIANCE) with strict 50% max single-position limit; high-priced shares constrained."
+    },
+    {
+      "capital": "30000.00",
+      "affordable_trades": 2,
+      "capital_rejected_trades": 0,
+      "net_pnl": "-266.33",
+      "net_return_pct": -0.8878,
+      "max_drawdown_pct": 0.89,
+      "hurdle_band_met": false,
+      "notes": "Full universe executable under standard 1% risk and 50% exposure limits."
+    },
+    {
+      "capital": "50000.00",
+      "affordable_trades": 2,
+      "capital_rejected_trades": 0,
+      "net_pnl": "-451.35",
+      "net_return_pct": -0.9027,
+      "max_drawdown_pct": 0.9,
+      "hurdle_band_met": false,
+      "notes": "Full universe executable under standard 1% risk and 50% exposure limits."
+    },
+    {
+      "capital": "100000.00",
+      "affordable_trades": 2,
+      "capital_rejected_trades": 0,
+      "net_pnl": "-910.29",
+      "net_return_pct": -0.9103,
+      "max_drawdown_pct": 0.91,
+      "hurdle_band_met": false,
+      "notes": "Full universe executable under standard 1% risk and 50% exposure limits."
+    }
+  ],
+  "user_validation_sample": [
+    {
+      "trade_id": "VETO-PROP-RELIANCE-1769488800-dc5ec4",
+      "opportunity_id": "PROP-RELIANCE-1769488800-dc5ec4",
+      "symbol": "RELIANCE",
+      "signal_timestamp": "2026-01-27T04:40:00Z",
+      "market_data_timestamp": "2026-01-27T04:40:00Z",
+      "market_data_provenance": "SYNTHETIC_DEMO_GEN",
+      "model_version": "MODEL-LOGREG-V1",
+      "raw_probability": 0.4483217462472561,
+      "calibrated_probability": 0.4483217462472561,
+      "estimated_expectancy": "-4.18",
+      "proposed_entry_price": "2524.2890",
+      "stop_loss_price": "2486.4247",
+      "profit_target_price": "2600.0177",
+      "requested_quantity": 5,
+      "authorized_quantity": 0,
+      "estimated_fees": "0.00",
+      "risk_authorized": false,
+      "risk_rejection_reasons": [
+        "MODEL_VETO_OR_ABSTENTION"
+      ],
+      "decision_state": "NO_TRADE",
+      "fill_price": null,
+      "exit_price": null,
+      "exit_timestamp": null,
+      "exit_reason": null,
+      "gross_pnl": "0.00",
+      "net_pnl": "0.00",
+      "fees_paid": "0.00",
+      "execution_mode": "HISTORICAL_REPLAY",
+      "is_backtest_outcome": true
+    },
+    {
+      "trade_id": "tr_609f80281cbc",
+      "opportunity_id": "PROP-TCS-1769489400-59aeb8",
+      "symbol": "TCS",
+      "signal_timestamp": "2026-01-27T04:50:00Z",
+      "market_data_timestamp": "2026-01-27T04:50:00Z",
+      "market_data_provenance": "SYNTHETIC_DEMO_GEN",
+      "model_version": "MODEL-LOGREG-V1",
+      "raw_probability": 0.7488355633223976,
+      "calibrated_probability": 0.7488355633223976,
+      "estimated_expectancy": "17.38",
+      "proposed_entry_price": "3822.5879",
+      "stop_loss_price": "3765.2491",
+      "profit_target_price": "3937.2655",
+      "requested_quantity": 3,
+      "authorized_quantity": 3,
+      "estimated_fees": "7.10",
+      "risk_authorized": true,
+      "risk_rejection_reasons": [],
+      "decision_state": "ACCEPTED_CANDIDATE",
+      "fill_price": "3823.35",
+      "exit_price": "3821.44",
+      "exit_timestamp": "2026-01-27T09:45:00Z",
+      "exit_reason": "CLOSED",
+      "gross_pnl": "-5.73",
+      "net_pnl": "-22.46",
+      "fees_paid": "16.73",
+      "execution_mode": "HISTORICAL_REPLAY",
+      "is_backtest_outcome": true
+    },
+    {
+      "trade_id": "tr_5848f97ba22b",
+      "opportunity_id": "PROP-INFY-1769661900-adf0e0",
+      "symbol": "INFY",
+      "signal_timestamp": "2026-01-29T04:45:00Z",
+      "market_data_timestamp": "2026-01-29T04:45:00Z",
+      "market_data_provenance": "SYNTHETIC_DEMO_GEN",
+      "model_version": "MODEL-LOGREG-V1",
+      "raw_probability": 0.8856150428049463,
+      "calibrated_probability": 0.8856150428049463,
+      "estimated_expectancy": "28.67",
+      "proposed_entry_price": "1627.6153",
+      "stop_loss_price": "1603.2011",
+      "profit_target_price": "1676.4438",
+      "requested_quantity": 9,
+      "authorized_quantity": 9,
+      "estimated_fees": "9.08",
+      "risk_authorized": true,
+      "risk_rejection_reasons": [],
+      "decision_state": "ACCEPTED_CANDIDATE",
+      "fill_price": "1627.94",
+      "exit_price": "1603.2011",
+      "exit_timestamp": "2026-01-29T06:20:00Z",
+      "exit_reason": "CLOSED",
+      "gross_pnl": "-222.65",
+      "net_pnl": "-243.87",
+      "fees_paid": "21.22",
+      "execution_mode": "HISTORICAL_REPLAY",
+      "is_backtest_outcome": true
+    },
+    {
+      "trade_id": "TRD-PROP-INFY-1769662200-530347",
+      "opportunity_id": "PROP-INFY-1769662200-530347",
+      "symbol": "INFY",
+      "signal_timestamp": "2026-01-29T04:50:00Z",
+      "market_data_timestamp": "2026-01-29T04:50:00Z",
+      "market_data_provenance": "SYNTHETIC_DEMO_GEN",
+      "model_version": "MODEL-LOGREG-V1",
+      "raw_probability": 0.7227632353694118,
+      "calibrated_probability": 0.7227632353694118,
+      "estimated_expectancy": "17.38",
+      "proposed_entry_price": "1628.8744",
+      "stop_loss_price": "1604.4413",
+      "profit_target_price": "1677.7406",
+      "requested_quantity": 9,
+      "authorized_quantity": 0,
+      "estimated_fees": "9.09",
+      "risk_authorized": false,
+      "risk_rejection_reasons": [
+        "UNRESOLVED_POSITION_STATE"
+      ],
+      "decision_state": "ACCEPTED_CANDIDATE",
+      "fill_price": null,
+      "exit_price": null,
+      "exit_timestamp": null,
+      "exit_reason": null,
+      "gross_pnl": "0.00",
+      "net_pnl": "0.00",
+      "fees_paid": "0.00",
+      "execution_mode": "HISTORICAL_REPLAY",
+      "is_backtest_outcome": true
+    }
+  ],
+  "total_validation_records": 4,
+  "data_and_leakage_audit": {
+    "splits_ordering": "Globally chronological (Train -> Dev -> Cal -> Thresh -> LockedTest)",
+    "boundary_purging_enforced": true,
+    "boundary_purged_samples": 72,
+    "embargo_length_bars": 75,
+    "embargo_justification": "Embargo is set to 1 trading session (75 completed 5-minute bars / 1 day) between consecutive temporal partitions. Justification: (1) Intraday trade outcome horizon is strictly <= 72 bars (compulsory square-off at 15:15 IST); (2) Feature indicators (SMA-21, ATR-14, RSI-14) have an information horizon of up to 21 bars (105 minutes); (3) Serial return autocorrelation and volatility clustering (GARCH persistence) in Indian equities decay over 1 session. Enforcing a 1-session buffer guarantees zero informational contamination across boundaries.",
+    "point_in_time_features": true,
+    "causal_feature_version": "FS-V1",
+    "survivorship_bias_policy": "NSE equity historical constituent and delisting records from public retail data providers are subject to survivorship bias limitations. While FinPilot enforces strict Point-In-Time universe filtering on known registered instruments, complete historical delisting coverage for prior years is unavailable in the current vendor tier. This limitation is explicitly disclosed and not assumed solved.",
+    "lockbox_sample_hash_verified": true,
+    "accounting_ledger_reconciled": true
+  },
+  "known_limitations": [
+    "Market data used for this evaluation consists of realistic, calibrated synthetic NSE 5-minute candles; live production markets may exhibit microstructure anomalies not fully captured in synthetic feeds.",
+    "Retail broker execution queuing and exchange matching latency are approximated via conservative stop-first ordering and fixed 2.0 bps slippage.",
+    "Survivorship bias in historical equity constituents is constrained by retail vendor limitations and is not assumed solved.",
+    "Intraday square-off at 15:15 IST is assumed executable at the prevailing 5-minute candle close without illiquid limit locks."
+  ],
+  "economic_verdict": {
+    "verdict": "SUGGESTIVE BUT INCONCLUSIVE",
+    "research_integrity_passed": true,
+    "economic_edge_demonstrated": false,
+    "incremental_net_pnl_vs_simple": "166.00",
+    "incremental_win_rate_vs_simple": 0.0,
+    "p_value_or_confidence": "95% Bootstrap CI [-487.74, -44.92]",
+    "justification": "Calibrated ML selection improved net P&L by +₹166.00 over simple baseline, but 95% bootstrap CI [-487.74, -44.92] overlaps zero, precluding statistical certainty."
+  }
+}

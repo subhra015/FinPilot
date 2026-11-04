@@ -89,7 +89,7 @@ Simulated forward paper trading was executed across a 5-session forward horizon 
 | **Accounting Discrepancy** | **₹0.00** | **Reconciled exactly to ₹0.00** |
 
 ### Prediction Ledger Decision Distribution
-Predictions recorded strictly **before** outcomes occur in `artifacts/forward_paper/prediction_ledger.json`:
+Predictions recorded strictly **before** outcomes occur in `artifacts/forward_paper/prediction_ledger.json` (summarized in [`artifacts/forward_paper/prediction_ledger_summary.json`](../../../artifacts/forward_paper/prediction_ledger_summary.json)):
 - **`NO_TRADE`**: 1,061 events (94.3%) — Technical indicators did not meet entry thresholds.
 - **`INSUFFICIENT_DATA`**: 60 events (5.3%) — Initial session rolling warmup bars.
 - **`ACCEPTED`**: 3 events (0.3%) — Passed strategy, model hurdle $\ge 0.54$, and risk authorization.
@@ -136,7 +136,7 @@ The `DriftAndPerformanceMonitor` continuously measures operational telemetry:
 
 1. **Forward Paper Manifest**: [`artifacts/forward_paper/FORWARD_PAPER_MANIFEST.json`](../../../artifacts/forward_paper/FORWARD_PAPER_MANIFEST.json)
 2. **Forward Paper Report**: [`artifacts/forward_paper/forward_paper_report.json`](../../../artifacts/forward_paper/forward_paper_report.json)
-3. **Prediction Ledger (Pre-Outcome)**: [`artifacts/forward_paper/prediction_ledger.json`](../../../artifacts/forward_paper/prediction_ledger.json)
+3. **Prediction Ledger Summary (Pre-Outcome)**: [`artifacts/forward_paper/prediction_ledger_summary.json`](../../../artifacts/forward_paper/prediction_ledger_summary.json)
 
 ---
 

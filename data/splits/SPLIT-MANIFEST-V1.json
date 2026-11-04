@@ -1,0 +1,106 @@
+{
+  "created_at": "2026-11-02T22:17:55.719335Z",
+  "dataset_hash": "91cbec8c7f84289ebbcc11ddcf58b54175ff500ff9c3b4e24a37035b024384ac",
+  "embargo_justification": "Embargo is set to 1 trading session (75 completed 5-minute bars / 1 day) between consecutive temporal partitions. Justification: (1) Intraday trade outcome horizon is strictly <= 72 bars (compulsory square-off at 15:15 IST); (2) Feature indicators (SMA-21, ATR-14, RSI-14) have an information horizon of up to 21 bars (105 minutes); (3) Serial return autocorrelation and volatility clustering (GARCH persistence) in Indian equities decay over 1 session. Enforcing a 1-session buffer guarantees zero informational contamination across boundaries.",
+  "excluded_rows_count": 456,
+  "is_final_test_locked": true,
+  "labeling_approach": "APPROACH_A_SHARED_SIZING",
+  "locked_final_test_hash": "8c02ffda1a534713de5d3ae0d29d2bac5461768bbdff51723e3ef30702aafab1",
+  "manifest_id": "SPLIT-TP-V1-91cbec8c-f91544",
+  "partitions": {
+    "CALIBRATION": {
+      "embargo_bars": 75,
+      "end_time": "2026-01-22T09:25:00Z",
+      "mean_net_pnl": "-23.57",
+      "negative_count": 206,
+      "partition_type": "CALIBRATION",
+      "positive_count": 127,
+      "purged_count": 18,
+      "sample_count": 333,
+      "sample_ids_hash": "9a303750887fb325ceb6294d7ea6d3cbe85d83536cf5e428c4dcc301f6949dd0",
+      "start_time": "2026-01-21T06:00:00Z",
+      "symbol_counts": {
+        "INFY": 111,
+        "RELIANCE": 111,
+        "TCS": 111
+      },
+      "win_rate": 0.3814
+    },
+    "DEV_MODEL_SELECTION": {
+      "embargo_bars": 75,
+      "end_time": "2026-01-20T09:25:00Z",
+      "mean_net_pnl": "-27.64",
+      "negative_count": 390,
+      "partition_type": "DEV_MODEL_SELECTION",
+      "positive_count": 201,
+      "purged_count": 18,
+      "sample_count": 591,
+      "sample_ids_hash": "d25daa65230325f8c7686765c187941504e7e956b1b5636699873b959f8df67b",
+      "start_time": "2026-01-16T04:35:00Z",
+      "symbol_counts": {
+        "INFY": 197,
+        "RELIANCE": 197,
+        "TCS": 197
+      },
+      "win_rate": 0.3401
+    },
+    "LOCKED_FINAL_TEST": {
+      "embargo_bars": 0,
+      "end_time": "2026-01-30T09:25:00Z",
+      "mean_net_pnl": "-24.51",
+      "negative_count": 447,
+      "partition_type": "LOCKED_FINAL_TEST",
+      "positive_count": 234,
+      "purged_count": 0,
+      "sample_count": 681,
+      "sample_ids_hash": "8c02ffda1a534713de5d3ae0d29d2bac5461768bbdff51723e3ef30702aafab1",
+      "start_time": "2026-01-27T07:50:00Z",
+      "symbol_counts": {
+        "INFY": 227,
+        "RELIANCE": 227,
+        "TCS": 227
+      },
+      "win_rate": 0.3436
+    },
+    "THRESHOLD_SELECTION": {
+      "embargo_bars": 75,
+      "end_time": "2026-01-26T09:25:00Z",
+      "mean_net_pnl": "-25.03",
+      "negative_count": 187,
+      "partition_type": "THRESHOLD_SELECTION",
+      "positive_count": 113,
+      "purged_count": 18,
+      "sample_count": 300,
+      "sample_ids_hash": "6bf5f0695c6cbb73d23e25dc6c181a4529a9ecb12eee3cee881c5fa453d8a7f3",
+      "start_time": "2026-01-23T06:55:00Z",
+      "symbol_counts": {
+        "INFY": 100,
+        "RELIANCE": 100,
+        "TCS": 100
+      },
+      "win_rate": 0.3767
+    },
+    "TRAIN": {
+      "embargo_bars": 75,
+      "end_time": "2026-01-15T09:25:00Z",
+      "mean_net_pnl": "-22.67",
+      "negative_count": 1379,
+      "partition_type": "TRAIN",
+      "positive_count": 838,
+      "purged_count": 18,
+      "sample_count": 2217,
+      "sample_ids_hash": "a2f4b6a130f3c675e0d0be902aff4b4bee888eb504d166c2f148c27c206ed2dc",
+      "start_time": "2026-01-01T05:25:00Z",
+      "symbol_counts": {
+        "INFY": 739,
+        "RELIANCE": 739,
+        "TCS": 739
+      },
+      "win_rate": 0.378
+    }
+  },
+  "policy_version": "TP-V1",
+  "survivorship_bias_limitation": "NSE equity historical constituent and delisting records from public retail data providers are subject to survivorship bias limitations. While FinPilot enforces strict Point-In-Time universe filtering on known registered instruments, complete historical delisting coverage for prior years is unavailable in the current vendor tier. This limitation is explicitly disclosed and not assumed solved.",
+  "total_purged": 72,
+  "total_samples": 4122
+}

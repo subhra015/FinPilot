@@ -1,0 +1,18 @@
+{
+  "manifest_version": "LAYER-16-FORWARD-PAPER-V1",
+  "created_at_utc": "2026-11-04T09:50:05.795351+00:00",
+  "model_id": "MODEL-LOGREG-V1",
+  "model_checksum": "ede1e29783917673f44b68e72e62f446b96972feb741627539f52c2a2c455bfb",
+  "policy_hash": "7b2f674b13ea73052d1e39eb3038228268d13ddf04eb25f9a51eb6b692cbd3bb",
+  "decision_threshold": 0.54,
+  "feature_schema": "FS-V1",
+  "risk_config_version": "RISK-CFG-V1",
+  "virtual_capital": 30000.0,
+  "virtual_capital_tier": "TIER_30K",
+  "bars_processed": 1125,
+  "trades_completed": 0,
+  "net_pnl_inr": 0.0,
+  "win_rate_pct": 0.0,
+  "max_drawdown_pct": 0.025933333333333333,
+  "accounting_discrepancy": 0.0
+}
