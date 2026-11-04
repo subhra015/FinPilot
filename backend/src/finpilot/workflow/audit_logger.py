@@ -19,7 +19,7 @@ import logging
 import re
 import uuid
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -28,10 +28,19 @@ logger = logging.getLogger("finpilot.security_audit")
 
 _REDACTION_PATTERNS = [
     (re.compile(r"Bearer\s+[A-Za-z0-9\-\._~\+\/]+=*", re.IGNORECASE), "Bearer [REDACTED_TOKEN]"),
-    (re.compile(r"password['\"]?\s*[:=]\s*['\"][^'\"]+['\"]", re.IGNORECASE), "password='[REDACTED]'"),
-    (re.compile(r"session_id['\"]?\s*[:=]\s*['\"][^'\"]+['\"]", re.IGNORECASE), "session_id='[REDACTED]'"),
+    (
+        re.compile(r"password['\"]?\s*[:=]\s*['\"][^'\"]+['\"]", re.IGNORECASE),
+        "password='[REDACTED]'",
+    ),
+    (
+        re.compile(r"session_id['\"]?\s*[:=]\s*['\"][^'\"]+['\"]", re.IGNORECASE),
+        "session_id='[REDACTED]'",
+    ),
     (re.compile(r"finpilot_session=([^;\s]+)", re.IGNORECASE), "finpilot_session=[REDACTED]"),
-    (re.compile(r"totp_code['\"]?\s*[:=]\s*['\"][^'\"]+['\"]", re.IGNORECASE), "totp_code='[REDACTED]'"),
+    (
+        re.compile(r"totp_code['\"]?\s*[:=]\s*['\"][^'\"]+['\"]", re.IGNORECASE),
+        "totp_code='[REDACTED]'",
+    ),
 ]
 
 _SENSITIVE_KEYS = {
@@ -69,7 +78,7 @@ def redact_sensitive_data(val: Any) -> Any:
     return val
 
 
-class SuspiciousActivityType(str, Enum):
+class SuspiciousActivityType(StrEnum):
     AUTHENTICATION_FAILURE = "AUTHENTICATION_FAILURE"
     AUTHORIZATION_DENIAL = "AUTHORIZATION_DENIAL"
     RATE_LIMIT_TRIGGER = "RATE_LIMIT_TRIGGER"

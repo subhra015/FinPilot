@@ -14,7 +14,7 @@ from decimal import Decimal
 from typing import Any
 
 from finpilot.evaluation.models import BrierDecomposition
-from finpilot.execution.fee_schedule import NSEEquityIntradayFeeSchedule, round_paisa
+from finpilot.execution.fee_schedule import round_paisa
 
 
 def compute_profit_factor(gains: Decimal, losses: Decimal) -> tuple[float, str]:
@@ -84,9 +84,7 @@ def compute_losing_streak_and_worst_day(
     return max_streak, round_paisa(worst_day)
 
 
-def compute_monthly_returns(
-    daily_records: list[tuple[str, Decimal, Decimal]]
-) -> dict[str, float]:
+def compute_monthly_returns(daily_records: list[tuple[str, Decimal, Decimal]]) -> dict[str, float]:
     """Compute percentage returns broken down by calendar month (YYYY-MM).
 
     Args:

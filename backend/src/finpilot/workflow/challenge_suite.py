@@ -22,22 +22,19 @@ Executes the mandatory 17 simulator and security challenge scenarios:
 
 from __future__ import annotations
 
-import io
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 from fastapi.testclient import TestClient
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from finpilot.app import create_app
 from finpilot.config import load_settings
-from finpilot.data.models import MarketDataRecord
-from finpilot.db.enums import DataMode, OrderSide, OrderStatus, OrderType, UserRole
+from finpilot.db.enums import DataMode, OrderSide, OrderStatus, OrderType
 from finpilot.decision.models import DecisionState
 from finpilot.execution.models import AmbiguityTreatment, ExecutionOrder, PositionState
 from finpilot.execution.simulator import ExecutionSimulator
-from finpilot.risk.models import RiskConfig
 from finpilot.schemas.candles import CandleBar
 from finpilot.workflow.audit_logger import SuspiciousActivityType, audit_logger
 from finpilot.workflow.orchestrator import CandidateSignal, EndToEndPaperWorkflow
@@ -75,7 +72,9 @@ class SimulatorSecurityChallengeSuite:
     # 1. Stop Gap Challenge
     # ------------------------------------------------------------------
     def challenge_01_stop_gap(self) -> ChallengeResult:
-        """Market gaps below stop price; fill must be at actual gap open price, NOT magical stop price."""
+        """Market gaps below stop price; fill must be at actual gap open price,
+        NOT magical stop price.
+        """
         pos = PositionState(
             portfolio_id=1,
             instrument_id=1,
@@ -95,7 +94,8 @@ class SimulatorSecurityChallengeSuite:
             status="OPEN",
             mode=DataMode.HISTORICAL_REPLAY,
         )
-        # Next 5-minute bar in the same Friday session at 10:20 IST opens with severe adverse gap at 3700.00 (below stop 3750.00)
+        # Next 5-minute bar in the same Friday session at 10:20 IST opens with severe adverse gap
+        # at 3700.00 (below stop 3750.00)
         gap_bar = CandleBar(
             symbol="TCS",
             timestamp=datetime(2024, 10, 18, 10, 20, tzinfo=IST),
@@ -110,7 +110,9 @@ class SimulatorSecurityChallengeSuite:
 
         assert fill is not None, "Position must exit on stop gap"
         assert fill.is_gap_fill, "Must be explicitly flagged as gap fill"
-        assert fill.fill_price == Decimal("3700.00"), f"Expected fill at gap open 3700.00, got {fill.fill_price}"
+        assert fill.fill_price == Decimal("3700.00"), (
+            f"Expected fill at gap open 3700.00, got {fill.fill_price}"
+        )
         assert reason == "GAP_STOP", f"Expected GAP_STOP exit, got {reason}"
 
         return ChallengeResult(
@@ -118,14 +120,19 @@ class SimulatorSecurityChallengeSuite:
             name="stop gap",
             category="SIMULATOR",
             passed=True,
-            evidence=f"Stop at 3750.00 filled at actual gap open: ₹{fill.fill_price} (gap_fill={fill.is_gap_fill}, exit_reason={reason})",
+            evidence=(
+                f"Stop at 3750.00 filled at actual gap open: ₹{fill.fill_price} "
+                f"(gap_fill={fill.is_gap_fill}, exit_reason={reason})"
+            ),
         )
 
     # ------------------------------------------------------------------
     # 2. Stop/Target Collision Challenge
     # ------------------------------------------------------------------
     def challenge_02_stop_target_collision(self) -> ChallengeResult:
-        """Both target and stop breached in the same bar; must flag ambiguity and apply conservative stop first."""
+        """Both target and stop breached in the same bar; must flag ambiguity and apply
+        conservative stop first.
+        """
         pos = PositionState(
             portfolio_id=1,
             instrument_id=1,
@@ -151,7 +158,7 @@ class SimulatorSecurityChallengeSuite:
             timestamp=datetime(2024, 10, 18, 10, 5, tzinfo=IST),
             open=3800.0,
             high=3860.0,  # Target breached
-            low=3740.0,   # Stop breached
+            low=3740.0,  # Stop breached
             close=3810.0,
             volume=40000,
         )
@@ -169,14 +176,19 @@ class SimulatorSecurityChallengeSuite:
             name="stop/target collision",
             category="SIMULATOR",
             passed=True,
-            evidence=f"Same-bar breach: ambiguity_flag=True, treatment={fill.ambiguity_treatment.value}, exit={reason}",
+            evidence=(
+                f"Same-bar breach: ambiguity_flag=True, "
+                f"treatment={fill.ambiguity_treatment.value}, exit={reason}"
+            ),
         )
 
     # ------------------------------------------------------------------
     # 3. Partial Fill Challenge
     # ------------------------------------------------------------------
     def challenge_03_partial_fill(self) -> ChallengeResult:
-        """Order exceeds available volume participation cap (10%); must execute partial fill without phantom shares."""
+        """Order exceeds available volume participation cap (10%); must execute partial fill
+        without phantom shares.
+        """
         order = ExecutionOrder(
             id="ORD-PARTIAL-01",
             proposal_id="PROP-PARTIAL-01",
@@ -209,7 +221,9 @@ class SimulatorSecurityChallengeSuite:
 
         assert fill is not None
         assert fill.is_partial, "Must be flagged as partial fill"
-        assert fill.fill_quantity == 200, f"Expected 200 shares (10% of 2000), got {fill.fill_quantity}"
+        assert fill.fill_quantity == 200, (
+            f"Expected 200 shares (10% of 2000), got {fill.fill_quantity}"
+        )
         assert fill.fill_quantity < order.quantity
 
         return ChallengeResult(
@@ -217,7 +231,10 @@ class SimulatorSecurityChallengeSuite:
             name="partial fill",
             category="SIMULATOR",
             passed=True,
-            evidence=f"Requested 1,000 shares on 2,000 bar volume; capped at 10% ({fill.fill_quantity} shares, is_partial=True)",
+            evidence=(
+                f"Requested 1,000 shares on 2,000 bar volume; capped at 10% "
+                f"({fill.fill_quantity} shares, is_partial=True)"
+            ),
         )
 
     # ------------------------------------------------------------------
@@ -242,7 +259,8 @@ class SimulatorSecurityChallengeSuite:
             status=OrderStatus.PENDING,
             risk_authorization_id="AUTH-02",
         )
-        # Bar low touches 3800.00 exactly (bar_low == limit_price), does not penetrate below (< 3800.00)
+        # Bar low touches 3800.00 exactly (bar_low == limit_price), does not penetrate below
+        # (< 3800.00)
         touch_bar = CandleBar(
             symbol="TCS",
             timestamp=datetime(2024, 10, 18, 10, 5, tzinfo=IST),
@@ -261,14 +279,19 @@ class SimulatorSecurityChallengeSuite:
             name="limit touch without proven fill",
             category="SIMULATOR",
             passed=True,
-            evidence="Buy limit at 3800.00 with bar low at exactly 3800.00 resulted in fill=None (penetration required)",
+            evidence=(
+                "Buy limit at 3800.00 with bar low at exactly 3800.00 resulted in "
+                "fill=None (penetration required)"
+            ),
         )
 
     # ------------------------------------------------------------------
     # 5. Duplicate Event Challenge
     # ------------------------------------------------------------------
     def challenge_05_duplicate_event(self) -> ChallengeResult:
-        """Re-submitting the exact same candle event is deduplicated without double fills or duplicate ledger entries."""
+        """Re-submitting the exact same candle event is deduplicated without double fills
+        or duplicate ledger entries.
+        """
         workflow = EndToEndPaperWorkflow(initial_capital=Decimal("30000.00"))
         candle = CandleBar(
             symbol="TCS",
@@ -309,7 +332,10 @@ class SimulatorSecurityChallengeSuite:
             name="duplicate event",
             category="PIPELINE",
             passed=True,
-            evidence="Duplicate submission deduplicated; returned identical order_id, is_duplicate=True, positions count=1",
+            evidence=(
+                "Duplicate submission deduplicated; returned identical order_id, "
+                "is_duplicate=True, positions count=1"
+            ),
         )
 
     # ------------------------------------------------------------------
@@ -384,19 +410,40 @@ class SimulatorSecurityChallengeSuite:
             name="out-of-order candle",
             category="PIPELINE",
             passed=True,
-            evidence="Retroactive bar from 09:30 received after 10:15 failed freshness check and rejected (DATA_STALE)",
+            evidence=(
+                "Retroactive bar from 09:30 received after 10:15 failed freshness check "
+                "and rejected (DATA_STALE)"
+            ),
         )
 
     # ------------------------------------------------------------------
     # 7. Simultaneous Candidates Competing for Shared Cash Challenge
     # ------------------------------------------------------------------
     def challenge_07_simultaneous_candidates_competing_for_cash(self) -> ChallengeResult:
-        """Simultaneous candidate proposals compete deterministically for shared ₹30,000 cash; winner takes capital."""
+        """Simultaneous candidate proposals compete deterministically for shared ₹30,000 cash;
+        winner takes capital.
+        """
         workflow = EndToEndPaperWorkflow(initial_capital=Decimal("30000.00"))
         ts = datetime(2024, 10, 18, 10, 15, tzinfo=IST)
 
-        candle_tcs = CandleBar(symbol="TCS", timestamp=ts, open=3800.0, high=3810.0, low=3790.0, close=3805.0, volume=50000)
-        candle_infy = CandleBar(symbol="INFY", timestamp=ts, open=1700.0, high=1710.0, low=1690.0, close=1705.0, volume=40000)
+        candle_tcs = CandleBar(
+            symbol="TCS",
+            timestamp=ts,
+            open=3800.0,
+            high=3810.0,
+            low=3790.0,
+            close=3805.0,
+            volume=50000,
+        )
+        candle_infy = CandleBar(
+            symbol="INFY",
+            timestamp=ts,
+            open=1700.0,
+            high=1710.0,
+            low=1690.0,
+            close=1705.0,
+            volume=40000,
+        )
 
         # TCS has higher calibrated prob (0.62 vs 0.58)
         cand_tcs = CandidateSignal(
@@ -447,7 +494,10 @@ class SimulatorSecurityChallengeSuite:
             name="simultaneous candidates competing for cash",
             category="SIMULATOR",
             passed=True,
-            evidence="TCS (P=0.62) won allocation; INFY (P=0.58) rejected deterministically (MAX_CONCURRENT_POSITIONS)",
+            evidence=(
+                "TCS (P=0.62) won allocation; INFY (P=0.58) rejected deterministically "
+                "(MAX_CONCURRENT_POSITIONS)"
+            ),
         )
 
     # ------------------------------------------------------------------
@@ -496,7 +546,9 @@ class SimulatorSecurityChallengeSuite:
         )
 
         exit_fill = workflow.evaluate_position_exits(close_bar)
-        assert exit_fill is not None, "Must trigger forced square off when executable bar is present"
+        assert exit_fill is not None, (
+            "Must trigger forced square off when executable bar is present"
+        )
         assert len(workflow.active_positions) == 0, "Position must be closed"
         assert exit_fill.fill_price > 0
 
@@ -535,7 +587,9 @@ class SimulatorSecurityChallengeSuite:
 
         # Feed is halted (volume 0) -> simulator returns None, no fill can occur
         halt_fill = workflow.evaluate_position_exits(halt_bar)
-        assert halt_fill is None, "Must NOT fabricate a fill when bar volume is zero / data unexecutable"
+        assert halt_fill is None, (
+            "Must NOT fabricate a fill when bar volume is zero / data unexecutable"
+        )
 
         # Mark position unresolved per policy
         unresolved_pos = workflow.mark_position_unresolved("RELIANCE", halt_bar)
@@ -547,7 +601,10 @@ class SimulatorSecurityChallengeSuite:
             name="session close with unresolved position",
             category="SIMULATOR",
             passed=True,
-            evidence="Distinguished executable cutoff exit (TCS closed) vs feed halt zero-volume (RELIANCE marked UNRESOLVED, no fabricated fill)",
+            evidence=(
+                "Distinguished executable cutoff exit (TCS closed) vs feed halt zero-volume "
+                "(RELIANCE marked UNRESOLVED, no fabricated fill)"
+            ),
         )
 
     # ------------------------------------------------------------------
@@ -560,7 +617,9 @@ class SimulatorSecurityChallengeSuite:
             stale_data_threshold_seconds=300,
             clock=lambda: clock_time,
         )
-        stale_ts = datetime(2024, 10, 18, 10, 0, tzinfo=IST)  # 10 minutes (600s) old relative to clock
+        stale_ts = datetime(
+            2024, 10, 18, 10, 0, tzinfo=IST
+        )  # 10 minutes (600s) old relative to clock
 
         stale_bar = CandleBar(
             symbol="TCS",
@@ -600,14 +659,19 @@ class SimulatorSecurityChallengeSuite:
             name="provider outage/stale data",
             category="PIPELINE",
             passed=True,
-            evidence="600s stale feed triggered fail-closed rejection and logged PROVIDER_FAILURE audit event",
+            evidence=(
+                "600s stale feed triggered fail-closed rejection and logged "
+                "PROVIDER_FAILURE audit event"
+            ),
         )
 
     # ------------------------------------------------------------------
     # 10. Corporate-Action Discontinuity Challenge
     # ------------------------------------------------------------------
     def challenge_10_corporate_action_discontinuity(self) -> ChallengeResult:
-        """Bonus/split creates a 50% price drop; unadjusted price jump is rejected to avoid false signals."""
+        """Bonus/split creates a 50% price drop; unadjusted price jump is rejected
+        to avoid false signals.
+        """
         workflow = EndToEndPaperWorkflow()
         # Bar 1 at 4000.00
         # Bar 2 at 2000.00 (unadjusted 2:1 split) without split factor adjustment
@@ -646,7 +710,10 @@ class SimulatorSecurityChallengeSuite:
             name="corporate-action discontinuity",
             category="PIPELINE",
             passed=True,
-            evidence="Unadjusted price discontinuity resulted in invalid geometry; rejected by RiskEvaluator",
+            evidence=(
+                "Unadjusted price discontinuity resulted in invalid geometry; "
+                "rejected by RiskEvaluator"
+            ),
         )
 
     # ------------------------------------------------------------------
@@ -709,7 +776,9 @@ class SimulatorSecurityChallengeSuite:
             evidence = "Failed: XSS symbol unexpectedly accepted"
         except Exception as exc:
             passed = True
-            evidence = f"XSS payload successfully rejected by schema validator: {type(exc).__name__}"
+            evidence = (
+                f"XSS payload successfully rejected by schema validator: {type(exc).__name__}"
+            )
 
         return ChallengeResult(
             challenge_number=13,
@@ -739,7 +808,10 @@ class SimulatorSecurityChallengeSuite:
             name="malformed/oversized import",
             category="SECURITY",
             passed=True,
-            evidence=f"15MB import payload rejected; logged INVALID_IMPORT event with size {oversized_bytes} bytes",
+            evidence=(
+                f"15MB import payload rejected; logged INVALID_IMPORT event with "
+                f"size {oversized_bytes} bytes"
+            ),
         )
 
     # ------------------------------------------------------------------
@@ -760,7 +832,10 @@ class SimulatorSecurityChallengeSuite:
             name="rate-limit abuse",
             category="SECURITY",
             passed=True,
-            evidence="Login burst exceeding 5 req/min triggered rate limiter and logged RATE_LIMIT_TRIGGER",
+            evidence=(
+                "Login burst exceeding 5 req/min triggered rate limiter and "
+                "logged RATE_LIMIT_TRIGGER"
+            ),
         )
 
     # ------------------------------------------------------------------
@@ -778,7 +853,9 @@ class SimulatorSecurityChallengeSuite:
             name="CSRF attempt",
             category="SECURITY",
             passed=True,
-            evidence=f"Mutating request without CSRF token safely blocked with status {resp.status_code}",
+            evidence=(
+                f"Mutating request without CSRF token safely blocked with status {resp.status_code}"
+            ),
         )
 
     # ------------------------------------------------------------------

@@ -6,7 +6,12 @@ Provides:
 - SimulatorSecurityChallengeSuite running all 17 challenges
 """
 
-from .audit_logger import SecurityAuditLogger, SuspiciousActivityRecord, SuspiciousActivityType, audit_logger
+from .audit_logger import (
+    SecurityAuditLogger,
+    SuspiciousActivityRecord,
+    SuspiciousActivityType,
+    audit_logger,
+)
 from .challenge_suite import ChallengeResult, SimulatorSecurityChallengeSuite
 from .orchestrator import (
     CandidateSignal,

@@ -9,16 +9,15 @@ Governed by:
 
 from __future__ import annotations
 
+import hashlib
+import json
 from collections import defaultdict
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
-import hashlib
-import json
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from finpilot.baselines.metrics import calculate_drawdown, calculate_profit_factor
 from finpilot.baselines.no_trade import NoTradeCashReference
 from finpilot.baselines.simple_strategy import PredeclaredSimpleStrategy
 from finpilot.data.adapters.base import BaseDataProviderAdapter
@@ -49,7 +48,6 @@ from finpilot.evaluation.models import (
     ModelFreezeMetadata,
     SlippageSensitivityResult,
     TradeValidationRecord,
-    UncertaintyInterval,
 )
 from finpilot.execution.fee_schedule import NSEEquityIntradayFeeSchedule, round_paisa
 from finpilot.execution.models import AmbiguityTreatment
@@ -60,9 +58,12 @@ from finpilot.features.models import FeatureVector
 from finpilot.features.pipeline import CausalFeaturePipeline
 from finpilot.labeling.generator import TradePolicyLabelGenerator
 from finpilot.labeling.lockbox import FinalTestLockbox
-from finpilot.labeling.models import LabelingApproach, PartitionType, SplitManifest, TradePolicyLabel
-from finpilot.labeling.split_manager import FinalTestLockedError, TemporalSplitManager
-from finpilot.ml.pipeline import MLSelectionPipeline
+from finpilot.labeling.models import (
+    LabelingApproach,
+    SplitManifest,
+    TradePolicyLabel,
+)
+from finpilot.labeling.split_manager import TemporalSplitManager
 from finpilot.ml.registry import ModelRegistry
 from finpilot.risk.evaluator import RiskEvaluator
 from finpilot.risk.models import RiskConfig, RiskDecisionStatus
@@ -127,17 +128,13 @@ class LockedHistoricalEvaluationRunner:
                 sym_bars.extend(bars)
                 for b in bars:
                     raw_bars_bytes.extend(
-                        f"{b.symbol},{b.timestamp.isoformat()},{b.open},{b.high},{b.low},{b.close},{b.volume}\n".encode(
-                            "utf-8"
-                        )
+                        f"{b.symbol},{b.timestamp.isoformat()},{b.open},{b.high},{b.low},{b.close},{b.volume}\n".encode()
                     )
                 curr += timedelta(days=1)
 
             fvs = feature_pipe.compute_features(sym_bars)
             f_map = {fv.timestamp: fv for fv in fvs}
-            labels, excluded = label_gen.generate_labels_for_series(
-                inst_id, sym, sym_bars, f_map
-            )
+            labels, excluded = label_gen.generate_labels_for_series(inst_id, sym, sym_bars, f_map)
             all_labels.extend(labels)
             total_excluded += excluded
 
@@ -182,7 +179,9 @@ class LockedHistoricalEvaluationRunner:
         with open(cal_path, encoding="utf-8") as f:
             cal_json = json.load(f)
         cal_hash = cal_json.get("policy_hash", "")
-        decision_thresh = float(cal_json.get("decision_threshold", meta_json.get("decision_threshold", 0.5)))
+        decision_thresh = float(
+            cal_json.get("decision_threshold", meta_json.get("decision_threshold", 0.5))
+        )
 
         dataset_manifest = DatasetManifest(
             dataset_name="NSE_EQUITY_INTRADAY_5M_SYNTHETIC_CLEAN",
@@ -455,7 +454,9 @@ class LockedHistoricalEvaluationRunner:
                         cal_p = decision.diagnostics.calibrated_probability
                         exp_val = decision.diagnostics.estimated_net_expectancy
                         dec_state = decision.decision_state.value
-                        is_accepted_by_model = (decision.decision_state == DecisionState.ACCEPTED_CANDIDATE)
+                        is_accepted_by_model = (
+                            decision.decision_state == DecisionState.ACCEPTED_CANDIDATE
+                        )
 
                     if not is_accepted_by_model:
                         # Log vetoed proposal
@@ -494,7 +495,10 @@ class LockedHistoricalEvaluationRunner:
                         available_cash=portfolio_manager.available_cash,
                         total_equity=curr_eq,
                         current_positions=[
-                            {"symbol": p.symbol, "notional": str(p.average_entry_price * Decimal(p.quantity))}
+                            {
+                                "symbol": p.symbol,
+                                "notional": str(p.average_entry_price * Decimal(p.quantity)),
+                            }
                             for p in portfolio_manager.positions.values()
                             if p.status == "OPEN"
                         ],
@@ -502,11 +506,11 @@ class LockedHistoricalEvaluationRunner:
                         current_timestamp=bar.timestamp,
                     )
 
-                    is_risk_auth = (risk_res.status == RiskDecisionStatus.AUTHORIZED) and (risk_res.authorization is not None)
+                    is_risk_auth = (risk_res.status == RiskDecisionStatus.AUTHORIZED) and (
+                        risk_res.authorization is not None
+                    )
                     rejection_reasons = (
-                        [r.value for r in risk_res.rejection_reasons]
-                        if not is_risk_auth
-                        else []
+                        [r.value for r in risk_res.rejection_reasons] if not is_risk_auth else []
                     )
                     auth_qty = (
                         risk_res.authorization.authorized_quantity
@@ -609,9 +613,7 @@ class LockedHistoricalEvaluationRunner:
         expectancy = (
             round_paisa(net_pnl / Decimal(total_trades)) if total_trades > 0 else Decimal("0.00")
         )
-        win_rate_pct = (
-            round(winning_trades / total_trades * 100.0, 2) if total_trades > 0 else 0.0
-        )
+        win_rate_pct = round(winning_trades / total_trades * 100.0, 2) if total_trades > 0 else 0.0
 
         gross_gains = sum(
             (t.gross_pnl for t in completed_trades if t.gross_pnl > Decimal("0.00")),
@@ -657,11 +659,14 @@ class LockedHistoricalEvaluationRunner:
             matched_t = None
             if vr.risk_authorized and vr.authorized_quantity > 0:
                 for t in completed_trades:
-                    if t.trade_id not in matched_trade_ids and t.symbol == vr.symbol:
-                        if t.entry_timestamp >= vr.signal_timestamp:
-                            matched_t = t
-                            matched_trade_ids.add(t.trade_id)
-                            break
+                    if (
+                        t.trade_id not in matched_trade_ids
+                        and t.symbol == vr.symbol
+                        and t.entry_timestamp >= vr.signal_timestamp
+                    ):
+                        matched_t = t
+                        matched_trade_ids.add(t.trade_id)
+                        break
             if matched_t is not None:
                 updated_records.append(
                     vr.model_copy(
@@ -783,7 +788,9 @@ class LockedHistoricalEvaluationRunner:
                 for r in val_records
                 if any("INSUFFICIENT_CASH" in reason for reason in r.risk_rejection_reasons)
             )
-            affordable = sum(1 for r in val_records if r.risk_authorized and r.authorized_quantity > 0)
+            affordable = sum(
+                1 for r in val_records if r.risk_authorized and r.authorized_quantity > 0
+            )
 
             notes = ""
             if cap <= Decimal("2000.00"):
@@ -849,7 +856,10 @@ class LockedHistoricalEvaluationRunner:
                 incremental_net_pnl_vs_simple=incremental_pnl,
                 incremental_win_rate_vs_simple=incremental_wr,
                 p_value_or_confidence="N/A",
-                justification="Arm A (cash reference) incurred non-zero P&L or fees, violating simulation baseline invariants.",
+                justification=(
+                    "Arm A (cash reference) incurred non-zero P&L or fees, "
+                    "violating simulation baseline invariants."
+                ),
             )
 
         # Check sample evidence
@@ -861,7 +871,10 @@ class LockedHistoricalEvaluationRunner:
                 incremental_net_pnl_vs_simple=incremental_pnl,
                 incremental_win_rate_vs_simple=incremental_wr,
                 p_value_or_confidence="N/A",
-                justification=f"Sample size ({total_test_samples}) is below minimum statistical reliability threshold (N >= 50).",
+                justification=(
+                    f"Sample size ({total_test_samples}) is below minimum "
+                    "statistical reliability threshold (N >= 50)."
+                ),
             )
 
         # Bootstrap confidence bounds on Net P&L
@@ -873,23 +886,27 @@ class LockedHistoricalEvaluationRunner:
             verdict = EconomicVerdictEnum.EDGE_SUPPORTED_UNDER_TESTED_ASSUMPTIONS
             edge_demonstrated = True
             justification = (
-                f"Calibrated ML selection generated positive incremental net P&L (+₹{incremental_pnl:,.2f}) "
-                f"over simple baseline with 95% bootstrap CI [{ci_low:,.2f}, {ci_high:,.2f}] excluding zero."
+                f"Calibrated ML selection generated positive incremental net P&L "
+                f"(+₹{incremental_pnl:,.2f}) over simple baseline with 95% bootstrap CI "
+                f"[{ci_low:,.2f}, {ci_high:,.2f}] excluding zero."
             )
         elif incremental_pnl > Decimal("0.00"):
             verdict = EconomicVerdictEnum.SUGGESTIVE_BUT_INCONCLUSIVE
             edge_demonstrated = False
             justification = (
-                f"Calibrated ML selection improved net P&L by +₹{incremental_pnl:,.2f} over simple baseline, "
-                f"but 95% bootstrap CI [{ci_low:,.2f}, {ci_high:,.2f}] overlaps zero, precluding statistical certainty."
+                f"Calibrated ML selection improved net P&L by +₹{incremental_pnl:,.2f} "
+                "over simple baseline, but 95% bootstrap CI "
+                f"[{ci_low:,.2f}, {ci_high:,.2f}] overlaps zero, precluding statistical certainty."
             )
         else:
             verdict = EconomicVerdictEnum.NO_DEMONSTRATED_EDGE
             edge_demonstrated = False
             justification = (
-                f"Calibrated ML selection did not improve net P&L over the non-ML baseline "
-                f"(Incremental net P&L: ₹{incremental_pnl:,.2f}, win rate delta: {incremental_wr:+.2f}%). "
-                "The simple baseline or cash reference demonstrated equivalent or superior net preservation."
+                "Calibrated ML selection did not improve net P&L over the non-ML baseline "
+                f"(Incremental net P&L: ₹{incremental_pnl:,.2f}, "
+                f"win rate delta: {incremental_wr:+.2f}%). "
+                "The simple baseline or cash reference demonstrated equivalent or "
+                "superior net preservation."
             )
 
         return EconomicVerdict(
@@ -992,7 +1009,9 @@ class LockedHistoricalEvaluationRunner:
 
         # 12. Compile Data and Leakage Audit Evidence
         leakage_audit = {
-            "splits_ordering": "Globally chronological (Train -> Dev -> Cal -> Thresh -> LockedTest)",
+            "splits_ordering": (
+                "Globally chronological (Train -> Dev -> Cal -> Thresh -> LockedTest)"
+            ),
             "boundary_purging_enforced": True,
             "boundary_purged_samples": split_manifest.total_purged,
             "embargo_length_bars": split_manifest.partitions["CALIBRATION"].embargo_bars,
@@ -1005,10 +1024,23 @@ class LockedHistoricalEvaluationRunner:
         }
 
         known_limitations = [
-            "Market data used for this evaluation consists of realistic, calibrated synthetic NSE 5-minute candles; live production markets may exhibit microstructure anomalies not fully captured in synthetic feeds.",
-            "Retail broker execution queuing and exchange matching latency are approximated via conservative stop-first ordering and fixed 2.0 bps slippage.",
-            "Survivorship bias in historical equity constituents is constrained by retail vendor limitations and is not assumed solved.",
-            "Intraday square-off at 15:15 IST is assumed executable at the prevailing 5-minute candle close without illiquid limit locks.",
+            (
+                "Market data used for this evaluation consists of realistic, calibrated "
+                "synthetic NSE 5-minute candles; live production markets may exhibit "
+                "microstructure anomalies not fully captured in synthetic feeds."
+            ),
+            (
+                "Retail broker execution queuing and exchange matching latency are approximated "
+                "via conservative stop-first ordering and fixed 2.0 bps slippage."
+            ),
+            (
+                "Survivorship bias in historical equity constituents is constrained by retail "
+                "vendor limitations and is not assumed solved."
+            ),
+            (
+                "Intraday square-off at 15:15 IST is assumed executable at the prevailing 5-minute "
+                "candle close without illiquid limit locks."
+            ),
         ]
 
         report = LockedHistoricalEvaluationReport(

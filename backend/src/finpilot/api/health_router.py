@@ -29,7 +29,9 @@ class ComponentHealth(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     status: str = Field(..., description="Status string: UP, DOWN, or DEGRADED")
-    details: dict[str, Any] = Field(default_factory=dict, description="Safe public diagnostics (no secrets)")
+    details: dict[str, Any] = Field(
+        default_factory=dict, description="Safe public diagnostics (no secrets)"
+    )
 
 
 class SystemHealthResponse(BaseModel):

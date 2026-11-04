@@ -8,8 +8,8 @@ Establishes secure HTTP defaults:
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
 import logging
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from fastapi import FastAPI, Request, Response
@@ -158,9 +158,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return JSONResponse(status_code=404, content=resp.model_dump())
 
     @app.exception_handler(Exception)
-    async def unhandled_exception_handler(
-        request: Request, exc: Exception
-    ) -> JSONResponse:
+    async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         logger = logging.getLogger("finpilot.app")
         logger.error(
             "Unhandled exception occurred: path=%s, error=%s",
