@@ -22,7 +22,7 @@ Each layer's full report lives in `docs/layers/layer-XX/README.md`.
 | 14 | End-to-end paper workflow & challenge suite | PASS | 2026-11-04 | _pending human approval_ | [layer-14](layer-14/README.md) |
 | 15 | Locked historical evaluation, model validation & user trust | PASS | 2026-11-04 | _pending human approval_ | [layer-15](layer-15/README.md) |
 | 16 | Forward paper trading, live-data validation & user confidence | PASS | 2026-11-04 | _pending human approval_ | [layer-16](layer-16/README.md) |
-| 17 | Full security review & verification | NOT STARTED | — | — | — |
+| 17 | Security hardening, production deployment & CV release | PASS | 2026-11-04 | _pending human approval_ | [layer-17](layer-17/README.md) |
 | 18 | Final evaluation & verdicts | NOT STARTED | — | — | — |
 
 Layer numbering is a plan (`ACCEPTANCE_GATES.md`); the human approver may

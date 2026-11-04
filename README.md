@@ -30,6 +30,7 @@ strategy, on unseen data, under identical execution and cost assumptions.
 - **Layer 14 — End-to-end paper workflow & challenge suite — PASS** (event-driven orchestrator integrating Data -> Features -> Proposal -> Selection -> Risk Engine -> Simulator -> Ledger -> Dashboard; idempotent event processing; bounded retries; fail-closed stale data policy and deterministic clock abstraction; 17/17 simulator & security stress challenges passed; exact cryptographic hash-chained crash recovery reconciliation).
 - **Layer 15 — Locked historical evaluation, model validation & user trust — PASS** (pre-evaluation cryptographic manifest `EVAL-MANIFEST-LOCKED-MODEL-LOGREG-V1`, final-test lockbox unsealed with verified token, 3-arm comparison under identical ₹30,000 capital, statutory fees and slippage, Murphy 1973 Brier score decomposition, date-clustered session block bootstrap B=1,000 CIs, slippage sensitivity grid, virtual capital tiers with integer-share cash constraints, transparent trade validation log, predeclared economic verdict `SUGGESTIVE BUT INCONCLUSIVE` with +₹166.00 incremental net P&L over non-ML baseline).
 - **Layer 16 — Forward paper trading, live-data validation & user confidence — PASS** (server-authoritative forward paper trading engine `ForwardPaperTradingEngine`; frozen Layer 15 model SHA-256 and policy hash integrity verification; user-controlled virtual portfolios ₹2,000, ₹10,000, ₹30,000, ₹50,000, custom with integer-share cash constraints; fail-closed stale data handling > 300s wall clock lag with exit monitoring; append-only prediction ledger recording predictions strictly before market outcomes; real-time drift, latency, and data health monitoring with safe `NO_NEW_ENTRIES` mode without silent retraining; double-entry accounting reconciled to ₹0.00; authenticated FastAPI endpoints under `/api/forward-paper/`; CLI runner `scripts/run_forward_paper.py`; 9/9 forward paper tests passed).
+- **Layer 17 — Security hardening, production deployment & CV release — PASS** (complete production readiness: non-root multi-stage Docker containerization UID 10001:10001, TLS-terminating Nginx reverse proxy with HSTS and CSP, detailed `/api/health` component readiness probe, online SQLite backup/restore with SHA-256 verification, operational incident response runbooks, 35-scenario automated security test suite passed with 100% success, CycloneDX 1.5 SBOM inventory, official release manifest and checksums; declared release verdicts: SECURITY RELEASE PASS, DEPLOYMENT READY WITH LIMITATIONS, PORTFOLIO RELEASE READY).
 
 There is still **no live trading logic, no live broker execution, no derivatives, and no payment processing**. Forward paper trading operates strictly in `DataMode.FORWARD_PAPER` with simulated order execution. Predictions are recorded in an append-only ledger prior to market outcomes, and outcomes are appended separately. All market data lag exceeding 300s blocks new entries fail-closed while continuously monitoring open position exits. Implementation of subsequent features begins in later layers, each requiring explicit human approval.
 
@@ -61,7 +62,8 @@ There is still **no live trading logic, no live broker execution, no derivatives
 | `docs/experiment-register.md` | Experiment register and immutable baseline run artifacts |
 | `docs/security-decisions.md`, `docs/exception-register.md` | Security governance |
 | `docs/layers/README.md` | Layer index |
-| `docs/layers/layer-00/README.md` … `layer-15/README.md` | Layer reports |
+| `docs/layers/layer-00/README.md` … `layer-17/README.md` | Layer reports (Layers 0 through 17) |
+| `artifacts/release/` | Supply-chain release artifacts (`sbom.json`, `RELEASE_MANIFEST_V1.json`, `CHECKSUMS.sha256`) |
 | `backend/` | Python 3.11+ / FastAPI, SQLAlchemy models, Alembic migrations, test suites |
 | `frontend/` | React + Vite + TypeScript foundation (ESLint/Prettier/Vitest) |
 | `ml/` | Python ML package scaffold (no models yet) |
@@ -141,20 +143,21 @@ and each layer's gate.
 
 ## Honest capability claims
 
-- **What works today:** typed configuration with fail-closed production
-  validation, redacting logging (extended to connection strings), a minimal secure
-  API skeleton, operational persistence models (instruments, symbol history, dataset
-  manifests, accounts, portfolios, positions, orders, ledger events), reversible
-  migrations, least-privilege role scripts with tested privilege boundaries, a
-  verified backup/restore runbook, causal feature pipeline & point-in-time universe,
-  the single versioned trade policy contract (`TP-V1`), an event-driven execution simulator
-  with next-bar fill timing, limit penetration rules, volume participation caps,
-  gap-through-stop handling, collision ambiguity flags, statutory fee breakdown,
-  ₹0.00-precision portfolio accounting reconciliation, and fully reproducible baseline
-  strategy evaluation (`REF-NOTRADE-V1` cash reference and `STRAT-SIMPLE-V1` predeclared
-  simple strategy).
-- **What is planned:** an independent risk authorization service (L8), persistent
-  ledger events (L9), ML selection models (L10), and backtesting/forward simulation harnesses.
-- **What is never claimed:** guaranteed returns, the ₹300–₹1,500 band as a
-  promise, live-trading capability, or production-ready HTTPS (that is a later
-  deployment layer; local HTTP is development-only).
+- **What works today:** All 18 engineering layers (Layer 0 through Layer 17) are
+  implemented, audited, and tested. This includes: typed configuration with fail-closed
+  production validation, redacting logging, operational persistence models, reversible
+  migrations, least-privilege database roles, point-in-time causal feature pipelines,
+  the versioned trade policy contract (`TP-V1`), an event-driven execution simulator
+  with conservative stop-first fill timing, statutory NSE fee schedules, ₹0.00-precision
+  portfolio accounting, calibrated ML model selection (LogReg + Platt scaling), independent
+  deny-by-default risk governance, NIST SP 800-63B-4 authentication with Argon2id and
+  opaque sessions, double-submit anti-CSRF protection, a React/TypeScript dashboard,
+  an append-only SHA-256 hash-chained audit ledger, locked historical evaluation,
+  authoritative forward paper trading engine with virtual capital tiers, non-root multi-stage
+  Docker containerization, TLS-terminating Nginx reverse proxy with HSTS/CSP, component
+  health monitoring, online backup/restoration, and a 35-scenario automated security test suite.
+- **What is out of scope:** Real-money live broker execution (prohibited by design),
+  derivative instruments (options, futures), intraday short selling, leverage/margin,
+  automated payment gateways, and multi-region distributed clustering.
+- **What is never claimed:** Guaranteed investment returns, risk-free profits, institutional
+  market-making execution, or live broker trade routing.
