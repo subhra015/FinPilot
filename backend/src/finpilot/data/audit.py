@@ -13,10 +13,10 @@ Executes comprehensive data health checks:
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime, time, timedelta
-from decimal import Decimal
 import statistics
-from typing import Sequence
+from collections.abc import Sequence
+from datetime import UTC, date, datetime, time
+from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 from finpilot.schemas.instruments import KnownInstrumentRegistry

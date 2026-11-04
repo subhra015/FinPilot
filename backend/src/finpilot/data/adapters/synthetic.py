@@ -6,11 +6,11 @@ Never to be presented as real-market evidence.
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime, time
-from decimal import Decimal
 import hashlib
 import math
-from typing import Sequence
+from collections.abc import Sequence
+from datetime import UTC, date, datetime, time
+from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 from finpilot.db.enums import CurrencyCode, DataMode, ExchangeCode
@@ -34,7 +34,9 @@ class SyntheticDataProviderAdapter(BaseDataProviderAdapter):
         registry: KnownInstrumentRegistry | None = None,
         base_prices: dict[str, Decimal] | None = None,
     ) -> None:
-        self._registry = registry or KnownInstrumentRegistry({"RELIANCE": 101, "TCS": 102, "INFY": 103})
+        self._registry = registry or KnownInstrumentRegistry(
+            {"RELIANCE": 101, "TCS": 102, "INFY": 103}
+        )
         self._base_prices = base_prices or {
             "RELIANCE": Decimal("2500.0000"),
             "TCS": Decimal("3800.0000"),
@@ -77,7 +79,13 @@ class SyntheticDataProviderAdapter(BaseDataProviderAdapter):
 
         # Pseudo-random deterministic generator based on symbol and date
         seed_str = f"{clean_sym}:{target_date.isoformat()}"
-        seed_int = int(hashlib.md5(seed_str.encode()).hexdigest()[:8], 16)
+        seed_int = int(
+            hashlib.md5(
+                seed_str.encode(),
+                usedforsecurity=False,
+            ).hexdigest()[:8],
+            16,
+        )
 
         for bar_idx in range(TOTAL_5M_BARS_PER_SESSION):
             total_minutes = 9 * 60 + 15 + bar_idx * 5

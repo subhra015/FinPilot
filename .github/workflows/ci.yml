@@ -35,18 +35,23 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e "backend[dev]"
+          pip install -e "./ml"
           pip install pytest pytest-cov ruff pip-audit
 
       - name: Run Ruff Linter
         run: |
-          ruff check backend/src
+          ruff check backend/src ml/src ml/tests
+
+      - name: Verify Ruff Formatting
+        run: |
+          ruff format --check backend/src ml/src ml/tests
 
       - name: Execute Full Pytest Regression Suite
         env:
           PYTHONPATH: backend/src
           FINPILOT_APP_ENV: test
         run: |
-          pytest backend/tests -v --durations=10
+          pytest backend/tests ml/tests -v --durations=10
 
   # ----------------------------------------------------------------------------
   # 2. Frontend Typecheck, Lint & Vitest Suite

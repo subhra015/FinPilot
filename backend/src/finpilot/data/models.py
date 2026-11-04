@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import uuid
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Any
-import uuid
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 

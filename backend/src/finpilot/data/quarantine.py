@@ -6,11 +6,11 @@ Stores quarantined entries with reason, raw payload, timestamp, and audit trail.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
 import hashlib
 import json
+from collections.abc import Sequence
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Sequence
 
 from .models import QuarantinedRecord
 

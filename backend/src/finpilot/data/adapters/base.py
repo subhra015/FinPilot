@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import abc
+from collections.abc import Sequence
 from datetime import date
-from typing import Sequence
 
 from finpilot.db.enums import DataMode
 from finpilot.schemas.datasets import DataSourceMetadata
