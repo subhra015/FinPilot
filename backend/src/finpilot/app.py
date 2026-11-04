@@ -22,6 +22,7 @@ from .api import (
     account_router,
     auth_router,
     evaluation_router,
+    forward_paper_router,
     ledger_router,
     model_router,
     portfolio_router,
@@ -184,5 +185,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(risk_router, prefix="/api")
     app.include_router(model_router, prefix="/api")
     app.include_router(evaluation_router, prefix="/api")
+    app.include_router(forward_paper_router, prefix="/api")
 
     return app
