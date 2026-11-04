@@ -1,0 +1,75 @@
+{
+  "status": {
+    "mode": "FORWARD_PAPER",
+    "initial_capital": "30000.0",
+    "current_equity": "29992.22",
+    "available_cash": "17444.47",
+    "reserved_cash": "0.00",
+    "open_positions_count": 1,
+    "active_orders_count": 0,
+    "total_predictions_recorded": 1125,
+    "total_trades_completed": 0,
+    "realized_net_pnl": "0.00",
+    "unrealized_pnl": "0.00",
+    "is_safe_mode_active": false,
+    "safe_mode_reason": null,
+    "last_candle_timestamp": "2025-02-07T09:55:00Z",
+    "system_clock_utc": "2025-02-07T09:55:00Z"
+  },
+  "performance": {
+    "starting_equity": "30000.00",
+    "ending_equity": "30000.00",
+    "gross_pnl": "0.00",
+    "total_fees": "0.00",
+    "net_pnl": "0.00",
+    "net_return_pct": 0.0,
+    "net_expectancy_per_trade": "0.00",
+    "profit_factor": 1.0,
+    "profit_factor_formula": "Sum(Gains) / Abs(Sum(Losses))",
+    "win_rate_pct": 0.0,
+    "total_trades": 0,
+    "winning_trades": 0,
+    "losing_trades": 0,
+    "scratch_trades": 0,
+    "max_drawdown_pct": 0.025933333333333333,
+    "worst_trading_day": "0.00",
+    "longest_losing_streak": 0,
+    "monthly_returns": {
+      "2026-02": 0.0
+    },
+    "signals_evaluated": 1125,
+    "signals_accepted": 3,
+    "coverage_rate": 0.27,
+    "ci_net_pnl_95": [
+      -50.0,
+      50.0
+    ],
+    "ci_expectancy_95": [
+      -25.0,
+      25.0
+    ],
+    "data_quality_failures": 60
+  },
+  "drift": {
+    "candles_processed": 1125,
+    "data_latency_seconds_max": 0.0,
+    "data_latency_seconds_avg": 0.0,
+    "stale_feed_incidents": 0,
+    "abnormal_geometry_incidents": 0,
+    "out_of_distribution_count": 0,
+    "safe_no_new_entry_mode": false,
+    "safe_mode_trigger_reason": null,
+    "rolling_drawdown_pct": 0.03,
+    "empirical_win_rate_pct": 0.0,
+    "calibrated_predicted_win_rate_pct": 0.0,
+    "calibration_drift_delta": 0.0,
+    "accounting_discrepancy": "0.00"
+  },
+  "total_events_recorded": 1125,
+  "decision_counts": {
+    "INSUFFICIENT_DATA": 60,
+    "NO_TRADE": 1061,
+    "ACCEPTED": 3,
+    "RISK_REJECTED": 1
+  }
+}
