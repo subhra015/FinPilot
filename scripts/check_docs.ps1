@@ -57,7 +57,9 @@ $required = @(
     'docs/layers/layer-10/README.md',
     'docs/layers/layer-11/README.md',
     'docs/layers/layer-12/README.md',
-    'docs/layers/layer-13/README.md'
+    'docs/operational-runbook.md',
+    'docs/layers/layer-13/README.md',
+    'docs/layers/layer-14/README.md'
 )
 
 Write-Output "== Required documents =="

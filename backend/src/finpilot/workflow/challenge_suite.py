@@ -63,7 +63,13 @@ class SimulatorSecurityChallengeSuite:
             modelled_slippage_bps=Decimal("2.0"),
         )
         self.app = create_app(load_settings())
-        self.client = TestClient(self.app)
+        self._client: TestClient | None = None
+
+    @property
+    def client(self) -> TestClient:
+        if self._client is None:
+            self._client = TestClient(self.app)
+        return self._client
 
     # ------------------------------------------------------------------
     # 1. Stop Gap Challenge
@@ -71,21 +77,28 @@ class SimulatorSecurityChallengeSuite:
     def challenge_01_stop_gap(self) -> ChallengeResult:
         """Market gaps below stop price; fill must be at actual gap open price, NOT magical stop price."""
         pos = PositionState(
-            position_id="POS-GAP-01",
+            portfolio_id=1,
             instrument_id=1,
             symbol="TCS",
-            side=OrderSide.BUY,
             quantity=10,
-            entry_price=Decimal("3800.00"),
+            average_entry_price=Decimal("3800.00"),
+            current_mark_price=Decimal("3800.00"),
+            realized_pnl=Decimal("0.00"),
+            unrealized_pnl=Decimal("0.00"),
+            total_cost_accrued=Decimal("15.20"),
+            entry_timestamp=datetime(2024, 10, 18, 10, 15, tzinfo=IST),
+            last_update_timestamp=datetime(2024, 10, 18, 10, 15, tzinfo=IST),
             stop_loss=Decimal("3750.00"),  # Planned stop at 3750
-            profit_target=Decimal("3900.00"),
-            entry_timestamp=datetime(2024, 10, 18, 9, 30, tzinfo=IST),
+            target_price=Decimal("3900.00"),
+            max_holding_bars=75,
+            bars_held=0,
             status="OPEN",
+            mode=DataMode.HISTORICAL_REPLAY,
         )
-        # Next morning bar opens with severe gap at 3700.00 (below 3750.00)
+        # Next 5-minute bar in the same Friday session at 10:20 IST opens with severe adverse gap at 3700.00 (below stop 3750.00)
         gap_bar = CandleBar(
             symbol="TCS",
-            timestamp=datetime(2024, 10, 19, 9, 15, tzinfo=IST),
+            timestamp=datetime(2024, 10, 18, 10, 20, tzinfo=IST),
             open=3700.0,
             high=3710.0,
             low=3690.0,
@@ -97,16 +110,15 @@ class SimulatorSecurityChallengeSuite:
 
         assert fill is not None, "Position must exit on stop gap"
         assert fill.is_gap_fill, "Must be explicitly flagged as gap fill"
-        # Fill price must reflect gap open with slippage (around 3699.26), strictly <= 3700.00, NOT 3750.00
-        assert fill.fill_price <= Decimal("3700.00"), f"Expected fill <= 3700.00, got {fill.fill_price}"
-        assert reason == "STOP_LOSS", f"Expected STOP_LOSS exit, got {reason}"
+        assert fill.fill_price == Decimal("3700.00"), f"Expected fill at gap open 3700.00, got {fill.fill_price}"
+        assert reason == "GAP_STOP", f"Expected GAP_STOP exit, got {reason}"
 
         return ChallengeResult(
             challenge_number=1,
             name="stop gap",
             category="SIMULATOR",
             passed=True,
-            evidence=f"Stop at 3750.00 filled at actual gap open with slippage: ₹{fill.fill_price} (gap_fill={fill.is_gap_fill})",
+            evidence=f"Stop at 3750.00 filled at actual gap open: ₹{fill.fill_price} (gap_fill={fill.is_gap_fill}, exit_reason={reason})",
         )
 
     # ------------------------------------------------------------------
@@ -115,16 +127,23 @@ class SimulatorSecurityChallengeSuite:
     def challenge_02_stop_target_collision(self) -> ChallengeResult:
         """Both target and stop breached in the same bar; must flag ambiguity and apply conservative stop first."""
         pos = PositionState(
-            position_id="POS-COL-01",
+            portfolio_id=1,
             instrument_id=1,
             symbol="TCS",
-            side=OrderSide.BUY,
             quantity=10,
-            entry_price=Decimal("3800.00"),
-            stop_loss=Decimal("3750.00"),
-            profit_target=Decimal("3850.00"),
+            average_entry_price=Decimal("3800.00"),
+            current_mark_price=Decimal("3800.00"),
+            realized_pnl=Decimal("0.00"),
+            unrealized_pnl=Decimal("0.00"),
+            total_cost_accrued=Decimal("15.20"),
             entry_timestamp=datetime(2024, 10, 18, 10, 0, tzinfo=IST),
+            last_update_timestamp=datetime(2024, 10, 18, 10, 0, tzinfo=IST),
+            stop_loss=Decimal("3750.00"),
+            target_price=Decimal("3850.00"),
+            max_holding_bars=75,
+            bars_held=0,
             status="OPEN",
+            mode=DataMode.HISTORICAL_REPLAY,
         )
         # Extreme volatility candle: Low <= 3750 AND High >= 3850
         collision_bar = CandleBar(
@@ -160,6 +179,7 @@ class SimulatorSecurityChallengeSuite:
         """Order exceeds available volume participation cap (10%); must execute partial fill without phantom shares."""
         order = ExecutionOrder(
             id="ORD-PARTIAL-01",
+            proposal_id="PROP-PARTIAL-01",
             portfolio_id=1,
             instrument_id=1,
             symbol="TCS",
@@ -167,6 +187,7 @@ class SimulatorSecurityChallengeSuite:
             side=OrderSide.BUY,
             quantity=1000,  # Order for 1000 shares
             price=Decimal("3800.00"),
+            created_at=datetime(2024, 10, 18, 10, 0, tzinfo=IST),
             signal_timestamp=datetime(2024, 10, 18, 10, 0, tzinfo=IST),
             earliest_entry_timestamp=datetime(2024, 10, 18, 10, 5, tzinfo=IST),
             expiry_timestamp=datetime(2024, 10, 18, 10, 10, tzinfo=IST),
@@ -206,6 +227,7 @@ class SimulatorSecurityChallengeSuite:
         """Limit touched exactly on bar low but not penetrated; must produce NO FILL."""
         order = ExecutionOrder(
             id="ORD-TOUCH-01",
+            proposal_id="PROP-TOUCH-01",
             portfolio_id=1,
             instrument_id=1,
             symbol="TCS",
@@ -213,6 +235,7 @@ class SimulatorSecurityChallengeSuite:
             side=OrderSide.BUY,
             quantity=10,
             price=Decimal("3800.00"),  # Buy limit at 3800.00
+            created_at=datetime(2024, 10, 18, 10, 0, tzinfo=IST),
             signal_timestamp=datetime(2024, 10, 18, 10, 0, tzinfo=IST),
             earliest_entry_timestamp=datetime(2024, 10, 18, 10, 5, tzinfo=IST),
             expiry_timestamp=datetime(2024, 10, 18, 10, 10, tzinfo=IST),
@@ -431,23 +454,37 @@ class SimulatorSecurityChallengeSuite:
     # 8. Session Close with Unresolved Position Challenge
     # ------------------------------------------------------------------
     def challenge_08_session_close_with_unresolved_position(self) -> ChallengeResult:
-        """Position remaining open at 15:15 IST cutoff is compulsory squared off."""
+        """Distinguish executable forced exit at cutoff vs missing data / unresolved position.
+
+        1. When executable market data is present at 15:15 IST cutoff, simulator executes
+           forced square-off (reason == 'SESSION_CUTOFF').
+        2. When market data is absent, zero-volume, or feed halts past session close,
+           the simulator cannot assume an exit fill; the position is marked UNRESOLVED
+           per documented policy without fabricating a fill.
+        """
         workflow = EndToEndPaperWorkflow(initial_capital=Decimal("30000.00"))
         pos = PositionState(
-            position_id="POS-UNRES-01",
+            portfolio_id=1,
             instrument_id=1,
             symbol="TCS",
-            side=OrderSide.BUY,
             quantity=7,
-            entry_price=Decimal("3800.00"),
-            stop_loss=Decimal("3750.00"),
-            profit_target=Decimal("3900.00"),
+            average_entry_price=Decimal("3800.00"),
+            current_mark_price=Decimal("3800.00"),
+            realized_pnl=Decimal("0.00"),
+            unrealized_pnl=Decimal("0.00"),
+            total_cost_accrued=Decimal("10.50"),
             entry_timestamp=datetime(2024, 10, 18, 10, 0, tzinfo=IST),
+            last_update_timestamp=datetime(2024, 10, 18, 10, 0, tzinfo=IST),
+            stop_loss=Decimal("3750.00"),
+            target_price=Decimal("3900.00"),
+            max_holding_bars=75,
+            bars_held=0,
             status="OPEN",
+            mode=DataMode.HISTORICAL_REPLAY,
         )
         workflow.active_positions["TCS"] = pos
 
-        # 15:15 IST candle arrives (compulsory cutoff)
+        # Case A: Executable market data is present at 15:15 IST cutoff -> clean forced square off
         close_bar = CandleBar(
             symbol="TCS",
             timestamp=datetime(2024, 10, 18, 15, 15, tzinfo=IST),
@@ -459,16 +496,58 @@ class SimulatorSecurityChallengeSuite:
         )
 
         exit_fill = workflow.evaluate_position_exits(close_bar)
-        assert exit_fill is not None, "Must trigger forced square off at 15:15 IST"
+        assert exit_fill is not None, "Must trigger forced square off when executable bar is present"
         assert len(workflow.active_positions) == 0, "Position must be closed"
         assert exit_fill.fill_price > 0
+
+        # Case B: Feed halts / zero-volume / missing executable data at cutoff
+        # Position cannot execute; must be marked UNRESOLVED without fabricating a fill
+        pos_halt = PositionState(
+            portfolio_id=1,
+            instrument_id=2,
+            symbol="RELIANCE",
+            quantity=5,
+            average_entry_price=Decimal("2800.00"),
+            current_mark_price=Decimal("2800.00"),
+            realized_pnl=Decimal("0.00"),
+            unrealized_pnl=Decimal("0.00"),
+            total_cost_accrued=Decimal("7.50"),
+            entry_timestamp=datetime(2024, 10, 18, 14, 0, tzinfo=IST),
+            last_update_timestamp=datetime(2024, 10, 18, 14, 0, tzinfo=IST),
+            stop_loss=Decimal("2750.00"),
+            target_price=Decimal("2900.00"),
+            max_holding_bars=75,
+            bars_held=0,
+            status="OPEN",
+            mode=DataMode.HISTORICAL_REPLAY,
+        )
+        workflow.active_positions["RELIANCE"] = pos_halt
+
+        halt_bar = CandleBar(
+            symbol="RELIANCE",
+            timestamp=datetime(2024, 10, 18, 15, 15, tzinfo=IST),
+            open=2810.0,
+            high=2810.0,
+            low=2810.0,
+            close=2810.0,
+            volume=0,  # Zero volume: trading halt / no executable market data
+        )
+
+        # Feed is halted (volume 0) -> simulator returns None, no fill can occur
+        halt_fill = workflow.evaluate_position_exits(halt_bar)
+        assert halt_fill is None, "Must NOT fabricate a fill when bar volume is zero / data unexecutable"
+
+        # Mark position unresolved per policy
+        unresolved_pos = workflow.mark_position_unresolved("RELIANCE", halt_bar)
+        assert unresolved_pos.status == "UNRESOLVED"
+        assert workflow.active_positions["RELIANCE"].status == "UNRESOLVED"
 
         return ChallengeResult(
             challenge_number=8,
             name="session close with unresolved position",
             category="SIMULATOR",
             passed=True,
-            evidence=f"At 15:15 IST, open position compulsory closed at market open slippage price ₹{exit_fill.fill_price}",
+            evidence="Distinguished executable cutoff exit (TCS closed) vs feed halt zero-volume (RELIANCE marked UNRESOLVED, no fabricated fill)",
         )
 
     # ------------------------------------------------------------------
@@ -476,8 +555,12 @@ class SimulatorSecurityChallengeSuite:
     # ------------------------------------------------------------------
     def challenge_09_provider_outage_stale_data(self) -> ChallengeResult:
         """Feed lag > 300s causes immediate fail-closed rejection of new proposals."""
-        workflow = EndToEndPaperWorkflow(stale_data_threshold_seconds=300)
-        stale_ts = datetime.now(UTC) - timedelta(seconds=600)  # 10 minutes old
+        clock_time = datetime(2024, 10, 18, 10, 10, tzinfo=IST)
+        workflow = EndToEndPaperWorkflow(
+            stale_data_threshold_seconds=300,
+            clock=lambda: clock_time,
+        )
+        stale_ts = datetime(2024, 10, 18, 10, 0, tzinfo=IST)  # 10 minutes (600s) old relative to clock
 
         stale_bar = CandleBar(
             symbol="TCS",

@@ -18,14 +18,18 @@ from __future__ import annotations
 import time
 import uuid
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session as DBSession, sessionmaker
 
 from finpilot.data.models import MarketDataRecord
-from finpilot.db.enums import DataMode, OrderSide, OrderStatus, OrderType
+from finpilot.db.base import Base
+from finpilot.db.enums import DataMode, LedgerEventType, OrderSide, OrderStatus, OrderType
+from finpilot.db.models import Account, Instrument, Portfolio
 from finpilot.decision.models import DecisionState
 from finpilot.execution.fee_schedule import NSEEquityIntradayFeeSchedule, round_paisa
 from finpilot.execution.models import AmbiguityTreatment, ExecutionOrder, FillEvent, PositionState
@@ -88,6 +92,8 @@ class EndToEndPaperWorkflow:
         mode: DataMode = DataMode.HISTORICAL_REPLAY,
         max_retries: int = 3,
         stale_data_threshold_seconds: int = 300,
+        clock: Callable[[], datetime] | None = None,
+        db: DBSession | None = None,
     ) -> None:
         self.mode = mode
         self.initial_capital = initial_capital
@@ -95,15 +101,66 @@ class EndToEndPaperWorkflow:
         self.reserved_cash = Decimal("0.00")
         self.max_retries = max_retries
         self.stale_data_threshold_seconds = stale_data_threshold_seconds
+        self.clock = clock
 
         # Core Engines
         self.fee_schedule = NSEEquityIntradayFeeSchedule()
-        self.risk_evaluator = RiskEvaluator(config=risk_config, fee_schedule=self.fee_schedule)
+        resolved_risk_config = risk_config or RiskConfig(
+            max_account_equity=initial_capital,
+            max_exposure_per_instrument_pct=Decimal("1.00"),
+            max_total_exposure_pct=Decimal("1.00"),
+            max_concurrent_positions=1,
+            approved_instruments=["TCS", "INFY", "RELIANCE"],
+        )
+        self.risk_evaluator = RiskEvaluator(config=resolved_risk_config, fee_schedule=self.fee_schedule)
         self.simulator = ExecutionSimulator(
             fee_schedule=self.fee_schedule,
             ambiguity_treatment=AmbiguityTreatment.CONSERVATIVE_STOP_FIRST,
         )
         self.ledger_service = AuditLedgerService()
+
+        # Database session for persistent audit ledger
+        if db is not None:
+            self.db = db
+        else:
+            engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+            Base.metadata.create_all(engine)
+            session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+            self.db = session_factory()
+            acc = Account(
+                id=1,
+                account_number="ACC-SIM-01",
+                name="Paper Account",
+                initial_scenario_capital=self.initial_capital,
+                current_cash=self.initial_capital,
+                mode=self.mode.value,
+            )
+            port = Portfolio(
+                id=1,
+                account_id=1,
+                name="Paper Portfolio",
+                mode=self.mode.value,
+            )
+            inst_tcs = Instrument(
+                id=1,
+                isin="INE062A01020",
+                symbol="TCS",
+                name="Tata Consultancy Services",
+            )
+            inst_infy = Instrument(
+                id=2,
+                isin="INE009A01021",
+                symbol="INFY",
+                name="Infosys Ltd",
+            )
+            inst_rel = Instrument(
+                id=3,
+                isin="INE002A01018",
+                symbol="RELIANCE",
+                name="Reliance Industries",
+            )
+            self.db.add_all([acc, port, inst_tcs, inst_infy, inst_rel])
+            self.db.commit()
 
         # State Tracking
         self.active_positions: dict[str, PositionState] = {}
@@ -111,6 +168,7 @@ class EndToEndPaperWorkflow:
         self.processed_event_keys: set[str] = set()
         self.cached_outcomes: dict[str, WorkflowExecutionOutcome] = {}
         self.realized_pnl = Decimal("0.00")
+        self.last_candle_timestamp: dict[str, datetime] = {}
 
     def execute_with_retry(
         self,
@@ -144,20 +202,69 @@ class EndToEndPaperWorkflow:
         candle: CandleBar | MarketDataRecord,
         current_time: datetime | None = None,
     ) -> bool:
-        """Verify market data candle is not stale (fail-closed check)."""
-        now = current_time or datetime.now(UTC)
+        """Verify market data candle is not stale or retroactively out-of-order (fail-closed check)."""
         candle_ts = candle.timestamp if candle.timestamp.tzinfo else candle.timestamp.replace(tzinfo=UTC)
-        age_seconds = (now - candle_ts).total_seconds()
+        symbol = candle.symbol
 
-        if age_seconds > self.stale_data_threshold_seconds:
-            audit_logger.log_provider_failure(
-                provider_name="market_data_feed",
-                endpoint="check_data_freshness",
-                error_message=f"Stale candle timestamp detected: {candle_ts.isoformat()} (lag {age_seconds:.1f}s > {self.stale_data_threshold_seconds}s)",
-                is_stale=True,
-            )
-            return False
-        return True
+        if self.mode == DataMode.HISTORICAL_REPLAY:
+            # Monotonic ordering check: Candle cannot arrive out-of-order before previously processed candle
+            if symbol in self.last_candle_timestamp:
+                prev_ts = self.last_candle_timestamp[symbol]
+                if candle_ts < prev_ts:
+                    audit_logger.log_provider_failure(
+                        provider_name="market_data_feed",
+                        endpoint="check_data_freshness",
+                        error_message=(
+                            f"Retroactive out-of-order candle: {candle_ts.isoformat()} "
+                            f"arrived after {prev_ts.isoformat()}"
+                        ),
+                        is_stale=True,
+                    )
+                    return False
+
+            # Bounded lag check if explicit replay clock or reference time provided
+            if current_time is not None or self.clock is not None:
+                now = current_time or (self.clock() if self.clock else None)
+                if now:
+                    now_utc = now if now.tzinfo else now.replace(tzinfo=UTC)
+                    age_seconds = (now_utc - candle_ts).total_seconds()
+                    if age_seconds > self.stale_data_threshold_seconds:
+                        audit_logger.log_provider_failure(
+                            provider_name="market_data_feed",
+                            endpoint="check_data_freshness",
+                            error_message=(
+                                f"Stale candle timestamp detected: {candle_ts.isoformat()} "
+                                f"(lag {age_seconds:.1f}s > {self.stale_data_threshold_seconds}s)"
+                            ),
+                            is_stale=True,
+                        )
+                        return False
+
+            self.last_candle_timestamp[symbol] = candle_ts
+            return True
+        else:
+            # Forward paper or live mode: evaluate against real UTC wall clock
+            now = current_time or (self.clock() if self.clock else datetime.now(UTC))
+            now_utc = now if now.tzinfo else now.replace(tzinfo=UTC)
+            age_seconds = (now_utc - candle_ts).total_seconds()
+
+            if age_seconds > self.stale_data_threshold_seconds:
+                audit_logger.log_provider_failure(
+                    provider_name="market_data_feed",
+                    endpoint="check_data_freshness",
+                    error_message=(
+                        f"Stale candle timestamp detected: {candle_ts.isoformat()} "
+                        f"(lag {age_seconds:.1f}s > {self.stale_data_threshold_seconds}s)"
+                    ),
+                    is_stale=True,
+                )
+                return False
+
+            if symbol in self.last_candle_timestamp and candle_ts < self.last_candle_timestamp[symbol]:
+                return False
+
+            self.last_candle_timestamp[symbol] = candle_ts
+            return True
 
     def process_candidate(
         self,
@@ -208,23 +315,38 @@ class EndToEndPaperWorkflow:
 
         # 3. Formulate Trade Proposal (Layer 0, 6)
         proposal_id = f"PROP-{uuid.uuid4().hex[:10].upper()}"
-        trade_proposal = TradeProposal(
-            proposal_id=proposal_id,
-            symbol=candidate.symbol,
-            side=OrderSide.BUY.value,
-            entry_price=candidate.entry_price,
-            stop_loss_price=candidate.stop_loss_price,
-            profit_target_price=candidate.profit_target_price,
-            quantity=candidate.quantity,
-            signal_timestamp=candidate.signal_timestamp,
-            execution_timestamp=candidate.execution_timestamp,
-            feature_version="FS-V1",
-            policy_version="TP-V1",
-        )
+        instrument_id = 1 if candidate.symbol == "TCS" else (2 if candidate.symbol == "INFY" else 3)
+        try:
+            trade_proposal = TradeProposal(
+                proposal_id=proposal_id,
+                policy_version="TP-V1",
+                instrument_id=instrument_id,
+                symbol=candidate.symbol,
+                decision_timestamp=candidate.signal_timestamp,
+                earliest_entry_timestamp=candidate.execution_timestamp,
+                entry_price=candidate.entry_price,
+                stop_loss=candidate.stop_loss_price,
+                target_price=candidate.profit_target_price,
+                quantity=candidate.quantity,
+                side=OrderSide.BUY,
+                mode=self.mode,
+            )
+        except Exception as exc:
+            outcome = WorkflowExecutionOutcome(
+                symbol=candidate.symbol,
+                candle_timestamp=candidate.candle.timestamp,
+                proposal_id=proposal_id,
+                decision_state="RISK_REJECTED",
+                is_risk_approved=False,
+                rejection_reasons=[str(exc)],
+                mode=self.mode.value,
+            )
+            self._record_outcome(event_key, outcome)
+            return outcome
 
         # 4. Independent Risk Engine Authorization (Layer 11)
         current_positions_summary = [
-            {"symbol": p.symbol, "notional": str(p.entry_price * p.quantity)}
+            {"symbol": p.symbol, "notional": str(p.average_entry_price * p.quantity)}
             for p in self.active_positions.values()
         ]
         risk_result: RiskEvaluationResult = self.risk_evaluator.evaluate_entry_proposal(
@@ -237,7 +359,7 @@ class EndToEndPaperWorkflow:
             current_timestamp=candidate.signal_timestamp,
         )
 
-        if risk_result.decision_status != RiskDecisionStatus.APPROVED:
+        if risk_result.status != RiskDecisionStatus.AUTHORIZED:
             reasons = [r.value for r in risk_result.rejection_reasons]
             outcome = WorkflowExecutionOutcome(
                 symbol=candidate.symbol,
@@ -264,19 +386,23 @@ class EndToEndPaperWorkflow:
         order_id = f"ORD-{uuid.uuid4().hex[:10].upper()}"
         order = ExecutionOrder(
             id=order_id,
+            proposal_id=proposal_id,
             portfolio_id=1,
-            instrument_id=1 if candidate.symbol == "TCS" else 2,
+            instrument_id=instrument_id,
             symbol=candidate.symbol,
             order_type=OrderType.LIMIT,
             side=OrderSide.BUY,
             quantity=candidate.quantity,
             price=candidate.entry_price,
+            created_at=candidate.signal_timestamp,
             signal_timestamp=candidate.signal_timestamp,
             earliest_entry_timestamp=candidate.execution_timestamp,
-            expiry_timestamp=candidate.execution_timestamp,
+            expiry_timestamp=candidate.execution_timestamp + timedelta(minutes=5),
             status=OrderStatus.PENDING,
             risk_authorization_id=risk_auth.authorization_id,
-            mode=self.mode.value,
+            mode=self.mode,
+            stop_loss=candidate.stop_loss_price,
+            target_price=candidate.profit_target_price,
         )
         self.open_orders[order_id] = order
 
@@ -284,48 +410,65 @@ class EndToEndPaperWorkflow:
         fill = self.simulator.evaluate_order(order, candidate.candle)
 
         if fill:
-            order.status = OrderStatus.FILLED
-            order.filled_quantity = fill.fill_quantity
+            updated_order = order.model_copy(
+                update={
+                    "status": OrderStatus.FILLED if fill.fill_quantity == order.quantity else OrderStatus.PARTIAL,
+                    "filled_quantity": fill.fill_quantity,
+                }
+            )
+            self.open_orders[order_id] = updated_order
             self.reserved_cash -= capital_required
 
-            # Create Active Position
+            # Create Active Position (Canonical PositionState)
             pos = PositionState(
-                position_id=f"POS-{candidate.symbol}",
+                portfolio_id=1,
                 instrument_id=order.instrument_id,
                 symbol=candidate.symbol,
-                side=OrderSide.BUY,
                 quantity=fill.fill_quantity,
-                entry_price=fill.fill_price,
-                stop_loss=candidate.stop_loss_price,
-                profit_target=candidate.profit_target_price,
+                average_entry_price=fill.fill_price,
+                current_mark_price=fill.fill_price,
+                realized_pnl=Decimal("0.00"),
+                unrealized_pnl=Decimal("0.00"),
+                total_cost_accrued=fill.cost_breakdown.total_costs,
                 entry_timestamp=fill.timestamp,
+                last_update_timestamp=fill.timestamp,
+                stop_loss=candidate.stop_loss_price,
+                target_price=candidate.profit_target_price,
+                max_holding_bars=75,
+                bars_held=0,
                 status="OPEN",
-                mode=self.mode.value,
+                mode=self.mode,
             )
             self.active_positions[candidate.symbol] = pos
 
             # 7. Record Immutable Ledger Event
             ledger_payload = LedgerEventPayload(
-                event_type="FILL",
+                event_id=f"EVT-FILL-{uuid.uuid4().hex[:12]}",
+                event_type=LedgerEventType.FILL,
+                timestamp=fill.timestamp,
+                mode=self.mode,
+                portfolio_id="1",
+                opportunity_id=candidate.symbol + ":" + candidate.candle.timestamp.isoformat(),
                 symbol=candidate.symbol,
-                quantity=fill.fill_quantity,
-                price=fill.fill_price,
-                costs=fill.cost_breakdown.total_costs,
+                instrument_id=order.instrument_id,
+                decision_state=DecisionState.ACCEPTED_CANDIDATE.value,
+                policy_version="TP-V1",
                 order_id=order_id,
-                risk_authorization_id=risk_auth.authorization_id,
-                metadata={
+                fill_details={
                     "fill_id": fill.fill_id,
-                    "calibrated_prob": candidate.calibrated_probability,
-                    "policy": "TP-V1",
+                    "fill_price": str(fill.fill_price),
+                    "fill_quantity": fill.fill_quantity,
+                    "is_partial": fill.is_partial,
                 },
+                cost_breakdown=fill.cost_breakdown.model_dump(mode="json"),
+                gross_pnl=Decimal("0.00"),
+                net_pnl=-fill.cost_breakdown.total_costs,
+                is_hypothetical=False,
             )
             ledger_record = self.ledger_service.record_event(
-                event_type="FILL",
+                self.db,
                 payload=ledger_payload,
-                mode=self.mode.value,
                 portfolio_id=1,
-                instrument_id=order.instrument_id,
-                timestamp=fill.timestamp,
             )
 
             outcome = WorkflowExecutionOutcome(
@@ -342,7 +485,8 @@ class EndToEndPaperWorkflow:
             )
         else:
             # Unfilled order
-            order.status = OrderStatus.EXPIRED
+            updated_order = order.model_copy(update={"status": OrderStatus.EXPIRED})
+            self.open_orders[order_id] = updated_order
             self.reserved_cash -= capital_required
             self.available_cash += capital_required
 
@@ -394,46 +538,114 @@ class EndToEndPaperWorkflow:
 
         exit_fill, reason = self.simulator.evaluate_position_exit(pos, bar)
         if exit_fill:
-            pos.status = "CLOSED"
-            gross_pnl = (exit_fill.fill_price - pos.entry_price) * pos.quantity
+            gross_pnl = (exit_fill.fill_price - pos.average_entry_price) * pos.quantity
             net_pnl = gross_pnl - exit_fill.cost_breakdown.total_costs
             self.realized_pnl += net_pnl
             self.available_cash += (exit_fill.fill_price * pos.quantity) - exit_fill.cost_breakdown.total_costs
 
             # Record Ledger Exit
             ledger_payload = LedgerEventPayload(
-                event_type="EXIT",
+                event_id=f"EVT-EXIT-{uuid.uuid4().hex[:12]}",
+                event_type=LedgerEventType.EXIT,
+                timestamp=exit_fill.timestamp,
+                mode=self.mode,
+                portfolio_id=str(pos.portfolio_id),
+                opportunity_id=f"OPP-{pos.symbol}-{exit_fill.timestamp.strftime('%H%M%S')}",
                 symbol=pos.symbol,
-                quantity=exit_fill.fill_quantity,
-                price=exit_fill.fill_price,
-                costs=exit_fill.cost_breakdown.total_costs,
-                realized_pnl=net_pnl,
-                metadata={"exit_reason": reason, "fill_id": exit_fill.fill_id},
+                instrument_id=pos.instrument_id,
+                decision_state="POSITION_EXITED",
+                policy_version="TP-V1",
+                order_id=exit_fill.order_id,
+                exit_details={
+                    "exit_price": str(exit_fill.fill_price),
+                    "exit_quantity": exit_fill.fill_quantity,
+                    "exit_reason": reason,
+                    "fill_id": exit_fill.fill_id,
+                },
+                cost_breakdown=exit_fill.cost_breakdown.model_dump(mode="json"),
+                gross_pnl=gross_pnl,
+                net_pnl=net_pnl,
+                is_hypothetical=False,
             )
             self.ledger_service.record_event(
-                event_type="EXIT",
+                self.db,
                 payload=ledger_payload,
-                mode=self.mode.value,
-                portfolio_id=1,
-                instrument_id=pos.instrument_id,
-                timestamp=exit_fill.timestamp,
+                portfolio_id=pos.portfolio_id,
             )
             del self.active_positions[pos.symbol]
             return exit_fill
         return None
 
+    def mark_position_unresolved(
+        self, symbol: str, bar: CandleBar | MarketDataRecord
+    ) -> PositionState:
+        """Mark an open position as UNRESOLVED when session closes or feed halts without executable exit."""
+        pos = self.active_positions.get(symbol)
+        if not pos or pos.status != "OPEN":
+            raise ValueError(f"No open position found for symbol {symbol}")
+
+        mark_price = Decimal(str(bar.close))
+        unrealized = (mark_price - pos.average_entry_price) * Decimal(pos.quantity)
+        unresolved_pos = PositionState(
+            portfolio_id=pos.portfolio_id,
+            instrument_id=pos.instrument_id,
+            symbol=pos.symbol,
+            quantity=pos.quantity,
+            average_entry_price=pos.average_entry_price,
+            current_mark_price=mark_price,
+            realized_pnl=pos.realized_pnl,
+            unrealized_pnl=unrealized,
+            total_cost_accrued=pos.total_cost_accrued,
+            entry_timestamp=pos.entry_timestamp,
+            last_update_timestamp=bar.timestamp,
+            stop_loss=pos.stop_loss,
+            target_price=pos.target_price,
+            max_holding_bars=pos.max_holding_bars,
+            bars_held=pos.bars_held,
+            status="UNRESOLVED",
+            mode=pos.mode,
+        )
+        self.active_positions[symbol] = unresolved_pos
+
+        # Record Ledger Event
+        ledger_payload = LedgerEventPayload(
+            event_id=f"EVT-UNRES-{uuid.uuid4().hex[:12]}",
+            event_type=LedgerEventType.EXECUTION_UNRESOLVED,
+            timestamp=bar.timestamp,
+            mode=self.mode,
+            portfolio_id=str(pos.portfolio_id),
+            opportunity_id=f"OPP-{pos.symbol}-{bar.timestamp.strftime('%H%M%S')}",
+            symbol=pos.symbol,
+            instrument_id=pos.instrument_id,
+            decision_state="UNRESOLVED",
+            policy_version="TP-V1",
+            exit_details={
+                "reason": "FEED_HALTED_OR_EOD_UNRESOLVED",
+                "mark_price": str(mark_price),
+                "unrealized_pnl": str(unrealized),
+            },
+            is_hypothetical=False,
+        )
+        self.ledger_service.record_event(
+            self.db,
+            payload=ledger_payload,
+            portfolio_id=pos.portfolio_id,
+        )
+        return unresolved_pos
+
     def total_equity(self) -> Decimal:
         """Authoritative equity: cash + reserved margin + unrealized position value."""
         position_value = sum(
-            (p.entry_price * p.quantity for p in self.active_positions.values()),
+            (p.average_entry_price * p.quantity for p in self.active_positions.values()),
             Decimal("0.00"),
         )
         return round_paisa(self.available_cash + self.reserved_cash + position_value)
 
     def recover_from_crash(self) -> dict[str, Any]:
         """Safely recover workflow state from the immutable audit ledger after process restart."""
-        replay_result = self.ledger_service.replay_verification(
-            mode=self.mode.value,
+        replay_result = self.ledger_service.replay_ledger(
+            self.db,
+            mode=self.mode,
             initial_cash=self.initial_capital,
             verify_hash_chain=True,
         )

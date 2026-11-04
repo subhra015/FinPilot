@@ -19,7 +19,7 @@ Each layer's full report lives in `docs/layers/layer-XX/README.md`.
 | 11 | Independent risk engine | PASS | 2026-11-03 | _pending human approval_ | [layer-11](layer-11/README.md) |
 | 12 | Secure API, authentication, authorization & audit ledger | PASS | 2026-11-03 | _pending human approval_ | [layer-12](layer-12/README.md) |
 | 13 | Frontend user interface & client-side security | PASS | 2026-11-04 | _pending human approval_ | [layer-13](layer-13/README.md) |
-| 14 | End-to-end paper workflow & challenge suite | NOT STARTED | — | — | — |
+| 14 | End-to-end paper workflow & challenge suite | PASS | 2026-11-04 | _pending human approval_ | [layer-14](layer-14/README.md) |
 | 15 | Observability, logging & monitoring | NOT STARTED | — | — | — |
 | 16 | Deployment, HTTPS & production env | NOT STARTED | — | — | — |
 | 17 | Full security review & verification | NOT STARTED | — | — | — |

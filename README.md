@@ -26,8 +26,10 @@ strategy, on unseen data, under identical execution and cost assumptions.
 - **Layer 10 — Calibration & selective decision logic — PASS** (probability calibration on CALIBRATION split, reliability diagrams, Murphy 1973 Brier score decomposition, ECE, hierarchical 5-state selective decision engine, epistemic sample support & OOD abstention, non-double-deducted net expectancy, frozen decision policy contracts `DECISION-POLICY-V1`, zero access to sealed final test).
 - **Layer 11 — Independent risk engine — PASS** (complete independent authority, 11 deny-by-default controls, cryptographically sealed RiskAuthorization, simulator enforcement, entry vs exit asymmetry, admin RBAC & signed audit trail with hash chaining).
 - **Layer 12 — Secure API, authentication, authorization & audit ledger — PASS** (NIST SP 800-63B-4 password policy, Argon2id, opaque server sessions in HttpOnly/Secure cookies, anti-CSRF tokens, sliding window rate limits, object-level IDOR protection, RFC 6238 TOTP MFA, append-only cryptographic ledger with sequential SHA-256 hash chaining).
+- **Layer 13 — Frontend user interface & client-side security — PASS** (React/TypeScript dashboard with 8 authenticated views: research status, stock scanner, trade proposal, risk console, paper portfolio, prediction ledger, evaluation report, and data health; distinct HISTORICAL REPLAY, FORWARD PAPER, and SYNTHETIC DEMO visual indicators; CSRF token synchronization; safe DOM rendering; zero secrets in browser bundles).
+- **Layer 14 — End-to-end paper workflow & challenge suite — PASS** (event-driven orchestrator integrating Data -> Features -> Proposal -> Selection -> Risk Engine -> Simulator -> Ledger -> Dashboard; idempotent event processing; bounded retries; fail-closed stale data policy and deterministic clock abstraction; 17/17 simulator & security stress challenges passed; exact cryptographic hash-chained crash recovery reconciliation).
 
-There is still **no live trading logic, no derivatives, and no payment processing**. Layer 12 established the production-quality secure API gateway, authentication, and append-only audit ledger (`finpilot.auth`, `finpilot.ledger`, `finpilot.api`). All private endpoints require authenticated opaque server sessions delivered via `HttpOnly`, `Secure`, `SameSite=Lax` cookies, preventing credential exfiltration. Password policies enforce NIST SP 800-63B-4 standards with Argon2id hashing and anti-enumeration timing defenses. Object ownership checks strictly eliminate IDOR vulnerabilities across accounts and portfolios. Administrative risk controls mandate RFC 6238 TOTP MFA and session-bound CSRF validation. The append-only audit ledger links all decision/outcome events via sequential SHA-256 cryptographic hashes ($H_n = \text{SHA256}(H_{n-1} \parallel \dots)$), separating counterfactual policy simulations from paper portfolios and enabling tamper-evident deterministic replay. The `LOCKED_FINAL_TEST` partition remains cryptographically sealed. Implementation of subsequent features begins in later layers, each requiring explicit human approval.
+There is still **no live trading logic, no live broker execution, no derivatives, and no payment processing**. Layer 14 established the integrated paper trading workflow orchestrator (`EndToEndPaperWorkflow`) and proved system resilience across all 17 simulator matching, concurrency, and security challenge scenarios (`SimulatorSecurityChallengeSuite`). The system enforces strict fail-closed stale data rejection ($> 300\text{s}$ or retroactive out-of-order candles), prevents phantom fills via volume participation caps ($\le 10\%$), deterministically arbitrates simultaneous candidates competing for ₹30,000 cash, isolates forward paper mode from real broker order routing, and reconstructs 100% of cash and realized P&L from the append-only SHA-256 hash-chained ledger upon crash recovery. The `LOCKED_FINAL_TEST` partition remains cryptographically sealed. Implementation of subsequent features begins in later layers, each requiring explicit human approval.
 
 ## Repository contents
 
@@ -45,6 +47,8 @@ There is still **no live trading logic, no derivatives, and no payment processin
 | `docs/calibration-methodology.md` | Calibration methodology, Murphy (1973) Brier decomposition, 5-state decision logic & abstention |
 | `docs/risk-engine-policy.md` | Risk engine policy, 11 deny-by-default controls, authorization contract & RBAC |
 | `docs/api-auth-specification.md` | API & authentication technical specification, NIST policy, TOTP MFA & ledger chaining |
+| `docs/user-flow.md` | User journeys, session management, CSRF handshake, and navigation architecture |
+| `docs/operational-runbook.md` | Standard operating procedures, trading sessions, fail-closed policy, and crash recovery |
 | `docs/database-backup-restore.md` | Database backup/restore procedures & retention policy |
 | `SECURITY.md` | Security policy and V1 security boundaries |
 | `SECURITY_CHECKLIST.md` | `SEC-01`…`SEC-27` status/owner/layer/evidence |
@@ -55,7 +59,7 @@ There is still **no live trading logic, no derivatives, and no payment processin
 | `docs/experiment-register.md` | Experiment register and immutable baseline run artifacts |
 | `docs/security-decisions.md`, `docs/exception-register.md` | Security governance |
 | `docs/layers/README.md` | Layer index |
-| `docs/layers/layer-00/README.md` … `layer-12/README.md` | Layer reports |
+| `docs/layers/layer-00/README.md` … `layer-14/README.md` | Layer reports |
 | `backend/` | Python 3.11+ / FastAPI, SQLAlchemy models, Alembic migrations, test suites |
 | `frontend/` | React + Vite + TypeScript foundation (ESLint/Prettier/Vitest) |
 | `ml/` | Python ML package scaffold (no models yet) |

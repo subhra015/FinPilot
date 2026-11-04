@@ -242,7 +242,7 @@ def verify_mfa_login(
     )
 
 
-@router.post("/mfa/setup")
+@router.post("/mfa/setup", dependencies=[Depends(require_csrf)])
 def setup_mfa(
     current_user: User = Depends(get_current_user),
     db: DBSession = Depends(get_db),
@@ -272,7 +272,7 @@ def verify_mfa_setup(
     return {"status": "MFA activated successfully.", "mfa_enabled": True}
 
 
-@router.post("/logout")
+@router.post("/logout", dependencies=[Depends(require_csrf)])
 def logout(
     request: Request,
     response: Response,

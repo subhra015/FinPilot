@@ -9,6 +9,7 @@ Establishes secure HTTP defaults:
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+import logging
 from typing import Any
 
 from fastapi import FastAPI, Request, Response
@@ -152,6 +153,23 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     ) -> JSONResponse:
         resp = ErrorResponse(error=str(exc), code=ErrorCode.RESOURCE_NOT_FOUND)
         return JSONResponse(status_code=404, content=resp.model_dump())
+
+    @app.exception_handler(Exception)
+    async def unhandled_exception_handler(
+        request: Request, exc: Exception
+    ) -> JSONResponse:
+        logger = logging.getLogger("finpilot.app")
+        logger.error(
+            "Unhandled exception occurred: path=%s, error=%s",
+            request.url.path,
+            sanitize_error_message(str(exc)),
+            exc_info=True,
+        )
+        resp = ErrorResponse(
+            error="An unexpected internal server error occurred.",
+            code=ErrorCode.INTERNAL_ERROR,
+        )
+        return JSONResponse(status_code=500, content=resp.model_dump())
 
     @app.get("/healthz", tags=["ops"])
     def healthz() -> dict[str, str]:

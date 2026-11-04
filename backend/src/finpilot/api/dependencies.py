@@ -19,7 +19,7 @@ from finpilot.auth.sessions import (
     SESSION_COOKIE_NAME,
     SessionManager,
 )
-from finpilot.config import Settings
+from finpilot.config import ConfigError, Settings
 from finpilot.db import create_engine_from_settings, create_session_factory
 from finpilot.db.enums import UserRole
 from finpilot.db.models import User
@@ -87,6 +87,9 @@ def require_csrf(
 ) -> None:
     """Enforce CSRF token and Origin validation for state-changing endpoints (SEC-16)."""
     settings: Settings = request.app.state.settings
+    if settings.is_production and not settings.secret_key:
+        raise ConfigError("Production requires FINPILOT_SECRET_KEY for CSRF validation")
+
     secret_key = (
         settings.secret_key.get_secret_value()
         if settings.secret_key

@@ -205,6 +205,10 @@ class ExecutionSimulator:
         if position.status != "OPEN" or position.quantity <= 0:
             return None, None
 
+        # Volume / Liquidity Check: If bar volume is 0, no fills can occur
+        if bar.volume <= 0:
+            return None, None
+
         bar_time_ist = bar.timestamp.astimezone(IST).time()
         bar_open = Decimal(str(bar.open))
         bar_high = Decimal(str(bar.high))

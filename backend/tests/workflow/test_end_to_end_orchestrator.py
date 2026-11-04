@@ -117,7 +117,9 @@ def test_bounded_retries_transient_failure_recovery(base_workflow: EndToEndPaper
 
 def test_fail_closed_on_stale_data(base_workflow: EndToEndPaperWorkflow) -> None:
     """Proposals with stale candle timestamps are fail-closed and rejected."""
-    ancient_ts = datetime.now(UTC) - timedelta(seconds=1200)  # 20 minutes ago
+    clock_time = datetime(2024, 10, 18, 10, 20, tzinfo=IST)
+    base_workflow.clock = lambda: clock_time
+    ancient_ts = datetime(2024, 10, 18, 10, 0, tzinfo=IST)  # 20 minutes (1200s) old relative to clock
     ancient_bar = CandleBar(
         symbol="TCS",
         timestamp=ancient_ts,

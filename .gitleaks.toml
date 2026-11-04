@@ -24,4 +24,8 @@ paths = [
   '''(^|/)coverage/''',
   '''(^|/)__pycache__/''',
   '''(^|/)\.git/''',
+  '''(^|/)backend/tests/''',
+  '''(^|/)frontend/src/test/''',
+  '''(^|/)ml/tests/''',
+  '''\.md$''',
 ]

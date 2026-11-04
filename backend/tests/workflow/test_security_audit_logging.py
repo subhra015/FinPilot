@@ -22,7 +22,7 @@ def test_secret_redaction_in_dictionaries() -> None:
         "username": "trader@finpilot.test",
         "password": "SuperSecretPassphrase123!",
         "session_id": "sess_abcdef1234567890",
-        "api_key": "sk_live_1234567890abcdef",
+        "api_key": "mock_api_key_redaction_target_999",
         "totp_code": "123456",
         "metadata": {
             "token": "secret_token_val",
