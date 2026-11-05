@@ -1,7 +1,8 @@
 """Safe market data file importer (SEC-06, SEC-18, SEC-19, SEC-23, Layer 4).
 
 Enforces:
-- Strict format allowlist: .csv and .parquet only. Rejects archives (.zip, .tar, .gz) and executables.
+- Strict format allowlist: .csv and .parquet only. Rejects archives (.zip, .tar, .gz)
+  and executables.
 - Magic byte content verification (PAR1 for Parquet, ASCII/UTF-8 tabular text for CSV).
 - Byte, row, and column limits (max 50 MB, max 1,000,000 rows, max 20 columns).
 - Path traversal prevention: strictly stores outside web root in dedicated data directories.
@@ -13,12 +14,12 @@ Enforces:
 from __future__ import annotations
 
 import csv
-from datetime import UTC, datetime
-from decimal import Decimal
 import hashlib
 import io
-from pathlib import Path
 import re
+from datetime import UTC, datetime
+from decimal import Decimal
+from pathlib import Path
 from typing import IO
 
 import pyarrow.parquet as pq  # type: ignore[import-untyped]
@@ -53,7 +54,9 @@ class SafeDataImporter:
     ) -> None:
         self._storage_dir = Path(storage_dir)
         self._quarantine = quarantine_manager or QuarantineManager()
-        self._registry = registry or KnownInstrumentRegistry({"RELIANCE": 101, "TCS": 102, "INFY": 103})
+        self._registry = registry or KnownInstrumentRegistry(
+            {"RELIANCE": 101, "TCS": 102, "INFY": 103}
+        )
         self._max_bytes = max_bytes
 
     def sanitize_filename(self, filename: str) -> str:
@@ -209,7 +212,12 @@ class SafeDataImporter:
                 # Invariant checks
                 if hp < op or hp < cp or hp < lp or lp > op or lp > cp or lp > hp:
                     raise ValueError(f"OHLC inconsistency on row {row_idx}")
-                if op <= Decimal("0") or hp <= Decimal("0") or lp <= Decimal("0") or cp <= Decimal("0"):
+                if (
+                    op <= Decimal("0")
+                    or hp <= Decimal("0")
+                    or lp <= Decimal("0")
+                    or cp <= Decimal("0")
+                ):
                     raise ValueError(f"Non-positive price on row {row_idx}")
                 if vol < 0:
                     raise ValueError(f"Negative volume on row {row_idx}")
@@ -316,7 +324,12 @@ class SafeDataImporter:
 
                 if hp < op or hp < cp or hp < lp or lp > op or lp > cp or lp > hp:
                     raise ValueError(f"OHLC inconsistency on row {i}")
-                if op <= Decimal("0") or hp <= Decimal("0") or lp <= Decimal("0") or cp <= Decimal("0"):
+                if (
+                    op <= Decimal("0")
+                    or hp <= Decimal("0")
+                    or lp <= Decimal("0")
+                    or cp <= Decimal("0")
+                ):
                     raise ValueError(f"Non-positive price on row {i}")
                 if vol < 0:
                     raise ValueError(f"Negative volume on row {i}")

@@ -8,11 +8,12 @@ and maps records to the canonical MarketDataRecord structure.
 from __future__ import annotations
 
 import csv
-from datetime import UTC, date, datetime
-from decimal import Decimal
 import hashlib
 import io
-from typing import Any, Sequence
+from collections.abc import Sequence
+from datetime import UTC, date, datetime
+from decimal import Decimal
+from typing import Any
 
 from finpilot.db.enums import CurrencyCode, DataMode, ExchangeCode
 from finpilot.schemas.datasets import DataSourceMetadata
@@ -31,7 +32,9 @@ class NseBhavcopyAdapter(BaseDataProviderAdapter):
         registry: KnownInstrumentRegistry | None = None,
         cached_data: dict[str, list[dict[str, Any]]] | None = None,
     ) -> None:
-        self._registry = registry or KnownInstrumentRegistry({"RELIANCE": 101, "TCS": 102, "INFY": 103})
+        self._registry = registry or KnownInstrumentRegistry(
+            {"RELIANCE": 101, "TCS": 102, "INFY": 103}
+        )
         self._data_store: dict[str, list[dict[str, Any]]] = cached_data or {}
 
     @property
@@ -101,7 +104,7 @@ class NseBhavcopyAdapter(BaseDataProviderAdapter):
                     dt = datetime.strptime(ts_str, "%d-%b-%Y").replace(tzinfo=UTC)
                 else:
                     dt = datetime.fromisoformat(ts_str).replace(tzinfo=UTC)
-            except Exception:
+            except (ValueError, TypeError):
                 continue
 
             if dt.date() != target_date:

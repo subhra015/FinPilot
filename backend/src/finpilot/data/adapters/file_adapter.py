@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import csv
+import hashlib
+from collections.abc import Sequence
 from datetime import UTC, date, datetime
 from decimal import Decimal
-import hashlib
 from pathlib import Path
-from typing import Sequence
 
 import pyarrow.parquet as pq  # type: ignore[import-untyped]
 
@@ -22,7 +22,8 @@ from .base import BaseDataProviderAdapter
 
 
 class ParquetFileAdapter(BaseDataProviderAdapter):
-    """Adapter reading validated analytical Parquet files with cryptographic checksum verification."""
+    """Adapter reading validated analytical Parquet files with cryptographic
+    checksum verification."""
 
     def __init__(
         self,
@@ -32,7 +33,9 @@ class ParquetFileAdapter(BaseDataProviderAdapter):
     ) -> None:
         self._path = Path(file_path)
         self._expected_sha256 = expected_sha256.lower() if expected_sha256 else None
-        self._registry = registry or KnownInstrumentRegistry({"RELIANCE": 101, "TCS": 102, "INFY": 103})
+        self._registry = registry or KnownInstrumentRegistry(
+            {"RELIANCE": 101, "TCS": 102, "INFY": 103}
+        )
         self._records: list[MarketDataRecord] = []
         self._load_and_verify()
 
@@ -66,7 +69,8 @@ class ParquetFileAdapter(BaseDataProviderAdapter):
 
         if self._expected_sha256 and actual_hash != self._expected_sha256:
             raise DomainValidationError(
-                f"Parquet file checksum mismatch. Expected {self._expected_sha256}, got {actual_hash}.",
+                f"Parquet file checksum mismatch. Expected {self._expected_sha256}, "
+                f"got {actual_hash}.",
                 field="sha256_checksum",
             )
 
@@ -106,8 +110,7 @@ class ParquetFileAdapter(BaseDataProviderAdapter):
     def fetch_bars(self, symbol: str, target_date: date) -> Sequence[MarketDataRecord]:
         clean_sym = symbol.strip().upper()
         return [
-            r for r in self._records
-            if r.symbol == clean_sym and r.timestamp.date() == target_date
+            r for r in self._records if r.symbol == clean_sym and r.timestamp.date() == target_date
         ]
 
 
@@ -122,7 +125,9 @@ class CsvFileAdapter(BaseDataProviderAdapter):
     ) -> None:
         self._path = Path(file_path)
         self._expected_sha256 = expected_sha256.lower() if expected_sha256 else None
-        self._registry = registry or KnownInstrumentRegistry({"RELIANCE": 101, "TCS": 102, "INFY": 103})
+        self._registry = registry or KnownInstrumentRegistry(
+            {"RELIANCE": 101, "TCS": 102, "INFY": 103}
+        )
         self._records: list[MarketDataRecord] = []
         self._load_and_verify()
 
@@ -193,6 +198,5 @@ class CsvFileAdapter(BaseDataProviderAdapter):
     def fetch_bars(self, symbol: str, target_date: date) -> Sequence[MarketDataRecord]:
         clean_sym = symbol.strip().upper()
         return [
-            r for r in self._records
-            if r.symbol == clean_sym and r.timestamp.date() == target_date
+            r for r in self._records if r.symbol == clean_sym and r.timestamp.date() == target_date
         ]

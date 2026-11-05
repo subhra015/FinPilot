@@ -43,7 +43,7 @@ def verify_frozen_model_and_config(
             f"Layer 15 Evaluation Manifest not found at {man_path}. "
             "Layer 16 requires an approved, frozen manifest.",
             field="manifest_path",
-            code=ErrorCode.NOT_FOUND,
+            code=ErrorCode.RESOURCE_NOT_FOUND,
         )
 
     with open(man_path, encoding="utf-8") as f:
@@ -59,7 +59,7 @@ def verify_frozen_model_and_config(
         raise DomainValidationError(
             f"Frozen model binary not found at {model_artifact}",
             field="model_artifact",
-            code=ErrorCode.NOT_FOUND,
+            code=ErrorCode.RESOURCE_NOT_FOUND,
         )
 
     sha256 = hashlib.sha256()
@@ -83,7 +83,7 @@ def verify_frozen_model_and_config(
         raise DomainValidationError(
             f"Calibration policy file not found at {cal_file}",
             field="calibration_file",
-            code=ErrorCode.NOT_FOUND,
+            code=ErrorCode.RESOURCE_NOT_FOUND,
         )
 
     with open(cal_file, encoding="utf-8") as f:

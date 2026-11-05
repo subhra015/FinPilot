@@ -31,7 +31,7 @@ class QualityFlag(enum.StrEnum):
 class AuditVerdict(enum.StrEnum):
     """Overall verdict of a per-symbol/day market data audit."""
 
-    PASS = "PASS"
+    PASS = "PASS"  # noqa: S105
     WARNING = "WARNING"
     REJECTED = "REJECTED"
 

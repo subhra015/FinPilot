@@ -223,7 +223,7 @@ class ForwardPredictionLedger:
             raise DomainValidationError(
                 f"Prediction event {event_id!r} not found in prediction ledger.",
                 field="event_id",
-                code=ErrorCode.NOT_FOUND,
+                code=ErrorCode.RESOURCE_NOT_FOUND,
             )
 
         prior = self._records[event_id]
