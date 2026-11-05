@@ -163,7 +163,7 @@ class LockedHistoricalEvaluationRunner:
             raise DomainValidationError(
                 f"Model metadata not found at {meta_path}",
                 field="model_id",
-                code=ErrorCode.NOT_FOUND,
+                code=ErrorCode.RESOURCE_NOT_FOUND,
             )
         with open(meta_path, encoding="utf-8") as f:
             meta_json = json.load(f)
@@ -174,7 +174,7 @@ class LockedHistoricalEvaluationRunner:
             raise DomainValidationError(
                 f"Calibration policy not found at {cal_path}",
                 field="calibration_policy_id",
-                code=ErrorCode.NOT_FOUND,
+                code=ErrorCode.RESOURCE_NOT_FOUND,
             )
         with open(cal_path, encoding="utf-8") as f:
             cal_json = json.load(f)

@@ -97,3 +97,14 @@ Desktop.ini
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Explicitly approved frozen model artifacts required by CI
+!/artifacts/models/
+/artifacts/models/*
+!/artifacts/models/MODEL-LOGREG-V1/
+/artifacts/models/MODEL-LOGREG-V1/*
+!/artifacts/models/MODEL-LOGREG-V1/MODEL-LOGREG-V1.joblib
+!/artifacts/models/MODEL-LOGREG-V1/metadata.json
+!/artifacts/calibration/
+/artifacts/calibration/*
+!/artifacts/calibration/DECISION-POLICY-V1-MODEL-LOGREG-V1.json
